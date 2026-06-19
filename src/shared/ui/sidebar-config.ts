@@ -145,6 +145,7 @@ export const NAV_CONFIG: NavSection[] = [
     items: [
       { type: 'link', href: '/', label: 'Dagens drift', icon: HomeIcon, exact: true, moduleKey: 'restaurant_public_site' },
       { type: 'link', href: '/kassa', label: 'Kassa', icon: ReceiptIcon, moduleKey: 'restaurant_orders' },
+      { type: 'link', href: '/kok', label: 'Kök', icon: PackageIcon, moduleKey: 'restaurant_orders' },
       { type: 'link', href: '/ordrar', label: 'Ordrar', icon: BarChart2Icon, moduleKey: 'restaurant_orders' },
       { type: 'link', href: '/bokningar', label: 'Bokningar', icon: CalendarIcon, moduleKey: 'restaurant_public_site' },
       { type: 'link', href: '/narvaro', label: 'Närvaro', icon: ClockIcon, moduleKey: 'clock_in' },

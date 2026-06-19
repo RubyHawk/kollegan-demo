@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AttendanceControls } from '../(shell)/narvaro/attendance-controls';
 import { Button } from '@shared/ui/button';
 import { InlineAlert } from '@shared/ui/inline-alert';
-import { StatusBadge, type StatusTone } from '@shared/ui/status-badge';
+import { StatusBadge } from '@shared/ui/status-badge';
 import { cn } from '@shared/lib/utils';
 import type { AttendanceShift } from '@shared/lib/api/attendance.api';
 import type { RestaurantMenuCategory, RestaurantMenuItem } from '@shared/lib/api/restaurant.api';
@@ -22,73 +22,9 @@ import {
   type RestaurantOrderSummary,
   type RestaurantPaymentMethod,
 } from '@shared/lib/api/restaurant-orders.api';
-
-type DraftItem = {
-  draftId: string;
-  menuItemId: string | null;
-  name: string;
-  quantity: number;
-  unitPriceCents: number;
-  note: string | null;
-};
-
-const PAYMENT_METHODS: Array<{ value: RestaurantPaymentMethod; label: string }> = [
-  { value: 'card', label: 'Kort' },
-  { value: 'swish', label: 'Swish' },
-  { value: 'cash', label: 'Kontant' },
-  { value: 'other', label: 'Annat' },
-];
-
-const STATUS_LABELS: Record<RestaurantOrderStatus, string> = {
-  new: 'Ny',
-  preparing: 'Tillagas',
-  ready: 'Klar',
-  completed: 'Utlämnad',
-  cancelled: 'Makulerad',
-};
-
-const STATUS_TONES: Record<RestaurantOrderStatus, StatusTone> = {
-  new: 'info',
-  preparing: 'warning',
-  ready: 'success',
-  completed: 'neutral',
-  cancelled: 'danger',
-};
-
-const currencyFormatter = new Intl.NumberFormat('sv-SE', {
-  style: 'currency',
-  currency: 'SEK',
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
-
-function money(cents: number) {
-  return currencyFormatter.format(cents / 100);
-}
-
-function timeLabel(value: string) {
-  return new Intl.DateTimeFormat('sv-SE', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value));
-}
-
-function normalizePriceInput(value: string): number | null {
-  const normalized = Number(value.replace(',', '.'));
-  if (!Number.isFinite(normalized) || normalized < 0) return null;
-  return Math.round(normalized * 100);
-}
-
-function orderNextAction(order: RestaurantOrder): { status: RestaurantOrderStatus; label: string } | null {
-  if (order.status === 'new') return { status: 'preparing', label: 'Tillagas' };
-  if (order.status === 'preparing') return { status: 'ready', label: 'Klar' };
-  if (order.status === 'ready') return { status: 'completed', label: 'Utlämnad' };
-  return null;
-}
-
-function availableItems(category: RestaurantMenuCategory): RestaurantMenuItem[] {
-  return category.items.filter((item) => item.isAvailable && item.priceCents !== null);
-}
+import { KassaActiveOrdersStrip } from './kassa-active-orders-strip';
+import { KassaReceiptPanel } from './kassa-receipt-panel';
+import { availableItems, type DraftItem, money, normalizePriceInput, timeLabel } from './kassa-helpers';
 
 export function KassaClient({
   initialMenu,
@@ -96,14 +32,14 @@ export function KassaClient({
   initialActiveOrders,
   initialSummary,
   initialShift,
-  canCloseDay,
+  canAdmin,
 }: {
   initialMenu: RestaurantMenuCategory[];
   initialBusinessDay: RestaurantBusinessDay | null;
   initialActiveOrders: RestaurantOrder[];
   initialSummary: RestaurantOrderSummary | null;
   initialShift: AttendanceShift | null;
-  canCloseDay: boolean;
+  canAdmin: boolean;
 }) {
   const categories = useMemo(
     () => initialMenu.filter((category) => category.isActive && availableItems(category).length > 0),
@@ -114,6 +50,7 @@ export function KassaClient({
   const [summary, setSummary] = useState(initialSummary);
   const [selectedCategoryId, setSelectedCategoryId] = useState(categories[0]?.id ?? '');
   const [draftItems, setDraftItems] = useState<DraftItem[]>([]);
+  const [orderNote, setOrderNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<RestaurantPaymentMethod>('card');
   const [paidNow, setPaidNow] = useState(true);
   const [customName, setCustomName] = useState('');
@@ -198,6 +135,12 @@ export function KassaClient({
     }));
   }
 
+  function changeItemNote(draftId: string, note: string) {
+    setDraftItems((current) => current.map((item) => (
+      item.draftId === draftId ? { ...item, note: note.trim() ? note : null } : item
+    )));
+  }
+
   function addCustomItem() {
     const priceCents = normalizePriceInput(customPrice);
     const name = customName.trim();
@@ -265,6 +208,7 @@ export function KassaClient({
     await run('create-order', async () => {
       const order = await createRestaurantOrder({
         fulfillmentType: 'counter',
+        note: orderNote.trim() || null,
         paymentStatus: paidNow ? 'paid' : 'unpaid',
         paymentMethod: paidNow ? paymentMethod : null,
         items: draftItems.map((item) => ({
@@ -276,6 +220,7 @@ export function KassaClient({
         })),
       });
       setDraftItems([]);
+      setOrderNote('');
       setActiveOrders((current) => [order, ...current.filter((item) => item.id !== order.id)]);
       await refreshOrdersAndSummary();
       setSuccess(`Order ${order.orderNumber} skapad.`);
@@ -319,7 +264,7 @@ export function KassaClient({
             <Button asChild variant="secondary" size="compact">
               <Link href="/">Översikt</Link>
             </Button>
-            {businessDay && canCloseDay ? (
+            {businessDay && canAdmin ? (
               <Button
                 type="button"
                 variant="outline"
@@ -396,189 +341,44 @@ export function KassaClient({
               </div>
             </section>
 
-            <aside className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] bg-[var(--ui-surface)]">
-              <section className="min-h-0 overflow-y-auto p-4">
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase text-[var(--ui-text-muted)]">Kvitto</p>
-                    <p className="text-2xl font-semibold tabular-nums">{money(draftTotalCents)}</p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="compact"
-                    disabled={draftItems.length === 0}
-                    onClick={() => setDraftItems([])}
-                  >
-                    Rensa
-                  </Button>
-                </div>
-
-                {error ? <InlineAlert tone="danger" className="mb-3">{error}</InlineAlert> : null}
-                {success ? <InlineAlert tone="success" className="mb-3">{success}</InlineAlert> : null}
-
-                <div className="divide-y divide-[var(--ui-border)] rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)]">
-                  {draftItems.length === 0 ? (
-                    <p className="p-4 text-sm text-[var(--ui-text-muted)]">Inga rader.</p>
-                  ) : draftItems.map((item) => (
-                    <div key={item.draftId} className="flex items-center gap-3 p-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold">{item.name}</p>
-                        <p className="text-xs text-[var(--ui-text-muted)]">{money(item.unitPriceCents)} styck</p>
-                      </div>
-                      <div className="flex h-10 items-center overflow-hidden rounded-[var(--ui-radius-md)] border border-[var(--ui-border)]">
-                        <button type="button" className="h-10 w-10 text-lg" onClick={() => changeQuantity(item.draftId, -1)}>-</button>
-                        <span className="w-10 text-center text-sm font-semibold tabular-nums">{item.quantity}</span>
-                        <button type="button" className="h-10 w-10 text-lg" onClick={() => changeQuantity(item.draftId, 1)}>+</button>
-                      </div>
-                      <p className="w-20 text-right text-sm font-semibold tabular-nums">{money(item.quantity * item.unitPriceCents)}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-3 grid grid-cols-[1fr_92px_auto] gap-2">
-                  <input
-                    value={customName}
-                    onChange={(event) => setCustomName(event.target.value)}
-                    placeholder="Fri rad"
-                    className="h-10 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3 text-sm outline-none focus:border-[var(--ui-accent-border)]"
-                  />
-                  <input
-                    value={customPrice}
-                    onChange={(event) => setCustomPrice(event.target.value)}
-                    placeholder="Pris"
-                    inputMode="decimal"
-                    className="h-10 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3 text-sm outline-none focus:border-[var(--ui-accent-border)]"
-                  />
-                  <Button type="button" variant="secondary" size="compact" onClick={addCustomItem}>
-                    Lägg till
-                  </Button>
-                </div>
-              </section>
-
-              <section className="border-t border-[var(--ui-border)] p-4">
-                <div className="mb-3 flex rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] p-1">
-                  <button
-                    type="button"
-                    onClick={() => setPaidNow(true)}
-                    className={cn(
-                      'h-10 flex-1 rounded-[calc(var(--ui-radius-md)-2px)] text-sm font-semibold',
-                      paidNow ? 'bg-[var(--ui-accent)] text-[var(--ui-text-inverse)]' : 'text-[var(--ui-text-secondary)]',
-                    )}
-                  >
-                    Betald
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaidNow(false)}
-                    className={cn(
-                      'h-10 flex-1 rounded-[calc(var(--ui-radius-md)-2px)] text-sm font-semibold',
-                      !paidNow ? 'bg-[var(--ui-accent)] text-[var(--ui-text-inverse)]' : 'text-[var(--ui-text-secondary)]',
-                    )}
-                  >
-                    Obetald
-                  </button>
-                </div>
-
-                <div className="mb-3 grid grid-cols-4 gap-2">
-                  {PAYMENT_METHODS.map((method) => (
-                    <button
-                      key={method.value}
-                      type="button"
-                      disabled={!paidNow}
-                      onClick={() => setPaymentMethod(method.value)}
-                      className={cn(
-                        'h-10 rounded-[var(--ui-radius-md)] border text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50',
-                        paidNow && paymentMethod === method.value
-                          ? 'border-[var(--ui-accent-border)] bg-[var(--ui-accent-subtle)] text-[var(--ui-accent)]'
-                          : 'border-[var(--ui-border)] bg-[var(--ui-bg)] text-[var(--ui-text-secondary)]',
-                      )}
-                    >
-                      {method.label}
-                    </button>
-                  ))}
-                </div>
-
-                <Button
-                  type="button"
-                  size="lg"
-                  className="h-14 w-full text-base"
-                  disabled={draftItems.length === 0 || !online}
-                  loading={busy === 'create-order'}
-                  onClick={submitOrder}
-                >
-                  Skapa order
-                </Button>
-              </section>
-            </aside>
+            <KassaReceiptPanel
+              draftItems={draftItems}
+              draftTotalCents={draftTotalCents}
+              error={error}
+              success={success}
+              customName={customName}
+              customPrice={customPrice}
+              orderNote={orderNote}
+              paymentMethod={paymentMethod}
+              paidNow={paidNow}
+              busy={busy}
+              online={online}
+              onClear={() => {
+                setDraftItems([]);
+                setOrderNote('');
+              }}
+              onChangeQuantity={changeQuantity}
+              onChangeItemNote={changeItemNote}
+              onCustomNameChange={setCustomName}
+              onCustomPriceChange={setCustomPrice}
+              onOrderNoteChange={setOrderNote}
+              onAddCustomItem={addCustomItem}
+              onPaidNowChange={setPaidNow}
+              onPaymentMethodChange={setPaymentMethod}
+              onSubmitOrder={submitOrder}
+            />
           </div>
         )}
 
-        {businessDay ? (
-          <section className="shrink-0 border-t border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 py-2">
-            <div className="flex gap-3 overflow-x-auto">
-              <div className="flex min-w-[220px] items-center justify-between rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2">
-                <div>
-                  <p className="text-xs text-[var(--ui-text-muted)]">Försäljning</p>
-                  <p className="text-lg font-semibold tabular-nums">{money(summary?.salesCents ?? 0)}</p>
-                </div>
-                <StatusBadge tone={(summary?.unpaidOrderCount ?? 0) > 0 ? 'warning' : 'success'}>
-                  {summary?.unpaidOrderCount ?? 0} obetalda
-                </StatusBadge>
-              </div>
-
-              {activeOrders.length === 0 ? (
-                <div className="flex min-w-[220px] items-center rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2 text-sm text-[var(--ui-text-muted)]">
-                  Inga aktiva ordrar.
-                </div>
-              ) : activeOrders.map((order) => {
-                const next = orderNextAction(order);
-                const nextDisabled = next?.status === 'completed' && order.paymentStatus !== 'paid';
-                return (
-                  <article
-                    key={order.id}
-                    className="flex min-w-[320px] items-center gap-3 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold tabular-nums">#{order.orderNumber}</p>
-                        <StatusBadge tone={STATUS_TONES[order.status]}>{STATUS_LABELS[order.status]}</StatusBadge>
-                        <StatusBadge tone={order.paymentStatus === 'paid' ? 'success' : 'warning'}>
-                          {order.paymentStatus === 'paid' ? 'Betald' : 'Obetald'}
-                        </StatusBadge>
-                      </div>
-                      <p className="mt-1 truncate text-xs text-[var(--ui-text-muted)]">
-                        {order.items.map((item) => `${item.quantity} ${item.name}`).join(', ')}
-                      </p>
-                    </div>
-                    {order.paymentStatus !== 'paid' ? (
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="compact"
-                        loading={busy === `paid:${order.id}`}
-                        onClick={() => markPaid(order)}
-                      >
-                        Betald
-                      </Button>
-                    ) : null}
-                    {next ? (
-                      <Button
-                        type="button"
-                        size="compact"
-                        disabled={nextDisabled}
-                        loading={busy === `status:${order.id}:${next.status}`}
-                        onClick={() => moveOrder(order, next.status)}
-                      >
-                        {next.label}
-                      </Button>
-                    ) : null}
-                  </article>
-                );
-              })}
-            </div>
-          </section>
-        ) : null}
+        <KassaActiveOrdersStrip
+          businessDay={businessDay}
+          summary={summary}
+          activeOrders={activeOrders}
+          busy={busy}
+          canAdmin={canAdmin}
+          onMarkPaid={markPaid}
+          onMoveOrder={moveOrder}
+        />
       </div>
     </main>
   );

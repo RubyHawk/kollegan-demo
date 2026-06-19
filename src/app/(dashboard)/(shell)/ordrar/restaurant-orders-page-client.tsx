@@ -56,6 +56,13 @@ function orderLine(order: RestaurantOrder) {
   return order.items.map((item) => `${item.quantity} ${item.name}`).join(', ');
 }
 
+function itemNotes(order: RestaurantOrder) {
+  return order.items
+    .filter((item) => item.note)
+    .map((item) => `${item.name}: ${item.note}`)
+    .join(' · ');
+}
+
 type Filter = 'all' | 'active' | 'unpaid' | 'completed';
 
 export function RestaurantOrdersPageClient({
@@ -115,6 +122,13 @@ export function RestaurantOrdersPageClient({
   async function cancelOrder(order: RestaurantOrder) {
     await run(`cancel:${order.id}`, async () => {
       await updateRestaurantOrder(order.id, { status: 'cancelled' });
+      await refresh();
+    });
+  }
+
+  async function refundOrder(order: RestaurantOrder) {
+    await run(`refund:${order.id}`, async () => {
+      await updateRestaurantOrder(order.id, { paymentStatus: 'refunded', paymentMethod: order.paymentMethod });
       await refresh();
     });
   }
@@ -188,6 +202,12 @@ export function RestaurantOrdersPageClient({
                         <StatusBadge tone="neutral">{money(order.totalCents)}</StatusBadge>
                       </div>
                       <p className="truncate text-sm text-[var(--ui-text)]">{orderLine(order)}</p>
+                      {order.note ? (
+                        <p className="truncate text-xs text-[var(--ui-text-muted)]">Notering: {order.note}</p>
+                      ) : null}
+                      {itemNotes(order) ? (
+                        <p className="truncate text-xs text-[var(--ui-text-muted)]">Radnoteringar: {itemNotes(order)}</p>
+                      ) : null}
                     </div>
                     <div className="flex flex-wrap justify-start gap-2 lg:justify-end">
                       {canMarkPaid && order.paymentStatus === 'unpaid' && order.status !== 'cancelled' ? (
@@ -210,6 +230,17 @@ export function RestaurantOrdersPageClient({
                           onClick={() => cancelOrder(order)}
                         >
                           Makulera
+                        </Button>
+                      ) : null}
+                      {canAdmin && order.paymentStatus === 'paid' ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="compact"
+                          loading={busy === `refund:${order.id}`}
+                          onClick={() => refundOrder(order)}
+                        >
+                          Återbetald
                         </Button>
                       ) : null}
                     </div>

@@ -86,6 +86,7 @@ describe('restaurant order service', () => {
     vi.mocked(restaurantOrderRepository.createOrder).mockResolvedValue(order);
     vi.mocked(restaurantOrderRepository.getOrderById).mockResolvedValue(order);
     vi.mocked(restaurantOrderRepository.listOrders).mockResolvedValue([]);
+    vi.mocked(restaurantOrderRepository.updateOrder).mockResolvedValue(order);
     vi.mocked(restaurantOrderRepository.closeBusinessDay).mockResolvedValue({ ...day, status: 'closed', closedAt: '2026-06-18T20:00:00.000Z' });
   });
 
@@ -141,6 +142,31 @@ describe('restaurant order service', () => {
       problem: { status: 403 },
     });
     expect(restaurantOrderRepository.updateOrder).not.toHaveBeenCalled();
+  });
+
+  it('requires admin permission to mark an order refunded', async () => {
+    vi.mocked(restaurantOrderRepository.getOrderById).mockResolvedValue({ ...order, paymentStatus: 'paid' });
+
+    await expect(updateRestaurantOrder('org_1', 'order_1', 'user_1', {
+      paymentStatus: 'refunded',
+    }, { canMarkPaid: true, canAdmin: false })).rejects.toMatchObject({
+      problem: { status: 403 },
+    });
+    expect(restaurantOrderRepository.updateOrder).not.toHaveBeenCalled();
+  });
+
+  it('allows admins with payment permission to mark an order refunded', async () => {
+    vi.mocked(restaurantOrderRepository.getOrderById).mockResolvedValue({ ...order, paymentStatus: 'paid' });
+    vi.mocked(restaurantOrderRepository.updateOrder).mockResolvedValue({ ...order, paymentStatus: 'refunded' });
+
+    await expect(updateRestaurantOrder('org_1', 'order_1', 'manager_1', {
+      paymentStatus: 'refunded',
+    }, { canMarkPaid: true, canAdmin: true })).resolves.toMatchObject({
+      paymentStatus: 'refunded',
+    });
+    expect(restaurantOrderRepository.updateOrder).toHaveBeenCalledWith('org_1', 'order_1', 'manager_1', expect.objectContaining({
+      paymentStatus: 'refunded',
+    }));
   });
 
   it('blocks invalid terminal status transitions', async () => {

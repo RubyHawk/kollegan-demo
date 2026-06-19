@@ -29,6 +29,7 @@ describe('restaurant orders API client', () => {
       .mockResolvedValueOnce(json({ orders: [] }))
       .mockResolvedValueOnce(json({ order: { id: 'order_1', orderNumber: 1 } }, 201))
       .mockResolvedValueOnce(json({ order: { id: 'order_1', paymentStatus: 'paid' } }))
+      .mockResolvedValueOnce(json({ order: { id: 'order_1', paymentStatus: 'refunded' } }))
       .mockResolvedValueOnce(json({ summary: { salesCents: 6000, bestSellers: [] } }))
       .mockResolvedValueOnce(json({ businessDay: { id: 'day_1', status: 'closed' } }));
     vi.stubGlobal('fetch', fetchMock);
@@ -42,6 +43,7 @@ describe('restaurant orders API client', () => {
       items: [{ menuItemId: '550e8400-e29b-41d4-a716-446655440000', quantity: 1 }],
     })).resolves.toMatchObject({ id: 'order_1' });
     await expect(updateRestaurantOrder('order_1', { paymentStatus: 'paid', paymentMethod: 'card' })).resolves.toMatchObject({ paymentStatus: 'paid' });
+    await expect(updateRestaurantOrder('order_1', { paymentStatus: 'refunded', paymentMethod: 'card' })).resolves.toMatchObject({ paymentStatus: 'refunded' });
     await expect(getRestaurantOrderSummary()).resolves.toMatchObject({ salesCents: 6000 });
     await expect(closeBusinessDay()).resolves.toMatchObject({ status: 'closed' });
 
@@ -50,7 +52,8 @@ describe('restaurant orders API client', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/v1/restaurant/orders?paymentStatus=unpaid&activeOnly=true', expect.any(Object));
     expect(fetchMock).toHaveBeenNthCalledWith(4, '/api/v1/restaurant/orders', expect.objectContaining({ method: 'POST' }));
     expect(fetchMock).toHaveBeenNthCalledWith(5, '/api/v1/restaurant/orders/order_1', expect.objectContaining({ method: 'PATCH' }));
-    expect(fetchMock).toHaveBeenNthCalledWith(6, '/api/v1/restaurant/orders/summary', expect.any(Object));
-    expect(fetchMock).toHaveBeenNthCalledWith(7, '/api/v1/restaurant/orders/business-day/close', expect.objectContaining({ method: 'PATCH' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(6, '/api/v1/restaurant/orders/order_1', expect.objectContaining({ method: 'PATCH' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(7, '/api/v1/restaurant/orders/summary', expect.any(Object));
+    expect(fetchMock).toHaveBeenNthCalledWith(8, '/api/v1/restaurant/orders/business-day/close', expect.objectContaining({ method: 'PATCH' }));
   });
 });

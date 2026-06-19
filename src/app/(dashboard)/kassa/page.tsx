@@ -53,7 +53,7 @@ export default async function KassaPage() {
     activeOrders,
     summary,
     currentShift,
-    canCloseDay,
+    canAdmin,
   ] = await Promise.all([
     listRestaurantMenu(user.orgId).catch(() => []),
     getCurrentBusinessDay(user.orgId).catch(() => null),
@@ -70,7 +70,7 @@ export default async function KassaPage() {
       initialActiveOrders={activeOrders}
       initialSummary={summary}
       initialShift={currentShift}
-      canCloseDay={canCloseDay}
+      canAdmin={canAdmin}
     />
   );
 }
