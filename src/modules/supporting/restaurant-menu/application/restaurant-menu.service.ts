@@ -1,6 +1,8 @@
 import { Errors } from '@platform/api/errors';
+import { logger } from '@platform/logging/logger';
 import { normalizeTenantHost, resolveTenantByHost, tenantHasModule } from '@platform/tenancy/tenant-resolver';
 import { restaurantMenuRepository } from '../infrastructure/restaurant-menu.repository';
+import { sendReservationEmail, type ReservationEmailKind } from './reservation-email';
 import type {
   CreateMenuCategoryInput,
   CreateMenuItemInput,
@@ -63,7 +65,49 @@ export async function createPublicReservationRequest(
   const organizationId = await resolvePublicRestaurantOrganization(host);
   const enabled = await tenantHasModule(organizationId, 'restaurant_public_site');
   if (!enabled) throw Errors.notFound('Restaurant site not found');
-  return restaurantMenuRepository.createReservationRequest(organizationId, input);
+  const reservation = await restaurantMenuRepository.createReservationRequest(organizationId, input);
+  await notifyReservationGuest(organizationId, input, 'received');
+  return reservation;
+}
+
+// The booking-flow guest fields needed for an email — satisfied by both the public create input and
+// the full reservation view returned on staff status changes.
+type ReservationGuestLike = {
+  id?: string;
+  guestEmail?: string | null;
+  guestName: string;
+  partySize: number;
+  requestedAt: string;
+};
+
+// Best-effort guest notification. Never throws: email problems must not break the booking flow or a
+// staff status change. No-op unless the guest left an email and RESTAURANT_EMAIL_ENABLED=true.
+async function notifyReservationGuest(
+  organizationId: string,
+  reservation: ReservationGuestLike,
+  kind: ReservationEmailKind,
+) {
+  if (!reservation.guestEmail) return;
+  try {
+    const settings = await restaurantMenuRepository.getPublicSiteSettings(organizationId);
+    await sendReservationEmail({
+      to: reservation.guestEmail,
+      kind,
+      guestName: reservation.guestName,
+      partySize: reservation.partySize,
+      requestedAt: reservation.requestedAt,
+      restaurantName: settings?.siteName ?? 'Restaurangen',
+      restaurantPhone: settings?.phone ?? null,
+      senderEmail: settings?.reservationEmail ?? settings?.email ?? null,
+    });
+  } catch (err) {
+    logger.warn('RestaurantMenuService', 'Reservation guest email failed (non-blocking)', {
+      organizationId,
+      reservationId: reservation.id,
+      kind,
+      error: (err as Error).message,
+    });
+  }
 }
 
 export async function listRestaurantMenu(organizationId: string) {
@@ -224,5 +268,8 @@ export async function updateReservationRequest(
     input,
   );
   if (!reservation) throw Errors.notFound('Reservation request not found');
+  if (input.status === 'confirmed' || input.status === 'declined') {
+    await notifyReservationGuest(organizationId, reservation, input.status);
+  }
   return reservation;
 }
