@@ -16,6 +16,8 @@
   font-family: var(--fluffy-display-font);
   font-weight: 950;
   text-transform: uppercase;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .fluffy-title {
