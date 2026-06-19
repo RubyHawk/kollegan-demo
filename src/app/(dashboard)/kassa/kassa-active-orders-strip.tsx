@@ -15,6 +15,7 @@ const FULFILLMENT_LABELS: Record<RestaurantFulfillmentType, string> = {
   takeaway: 'Avhämtning',
   dine_in: 'Bordsservering',
   counter: 'Disk',
+  booking_linked: 'Bokning',
   delivery: 'Leverans',
 };
 
@@ -50,6 +51,7 @@ export function KassaActiveOrdersStrip({
   canAdmin,
   canReadReports,
   onMarkPaid,
+  onSendHeld,
   onMoveOrder,
 }: {
   businessDay: RestaurantBusinessDay | null;
@@ -60,6 +62,7 @@ export function KassaActiveOrdersStrip({
   canAdmin: boolean;
   canReadReports: boolean;
   onMarkPaid: (order: RestaurantOrder) => void;
+  onSendHeld: (order: RestaurantOrder) => void;
   onMoveOrder: (order: RestaurantOrder, status: RestaurantOrderStatus) => void;
 }) {
   if (!businessDay) return null;
@@ -102,6 +105,12 @@ export function KassaActiveOrdersStrip({
                   <StatusBadge tone={order.paymentStatus === 'paid' ? 'success' : 'warning'}>
                     {order.paymentStatus === 'paid' ? 'Betald' : 'Obetald'}
                   </StatusBadge>
+                  {order.isHeld ? <StatusBadge tone="neutral">Parkerad</StatusBadge> : null}
+                  {!order.isHeld && (order.kotStatus ?? 'not_sent') !== 'not_sent' ? (
+                    <StatusBadge tone={order.kotStatus === 'printed' ? 'success' : 'info'}>
+                      {order.kotStatus === 'printed' ? 'Print' : 'Kök'}
+                    </StatusBadge>
+                  ) : null}
                 </div>
                 <p className="mt-1 truncate text-xs text-[var(--ui-text-muted)]">
                   {order.items.map((item) => `${item.quantity} ${item.name}`).join(', ')}
@@ -125,6 +134,17 @@ export function KassaActiveOrdersStrip({
                   <p className="mt-0.5 text-xs font-medium text-[var(--ui-text)]">Adress: {order.deliveryAddress}</p>
                 ) : null}
               </div>
+              {order.isHeld ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="compact"
+                  loading={busy === `send:${order.id}`}
+                  onClick={() => onSendHeld(order)}
+                >
+                  Skicka
+                </Button>
+              ) : null}
               {canMarkPaid && order.paymentStatus !== 'paid' ? (
                 <Button
                   type="button"

@@ -1,4 +1,4 @@
-﻿export const ACTIVE_NOTIFICATION_TAGS = [
+export const ACTIVE_NOTIFICATION_TAGS = [
   'offer_signed',
   'offer_declined',
 ] as const;

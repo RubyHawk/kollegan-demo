@@ -215,6 +215,40 @@ describe('restaurant order service', () => {
     });
     expect(restaurantOrderRepository.updateOrder).not.toHaveBeenCalled();
   });
+
+  it('blocks kitchen status changes while an order is held', async () => {
+    vi.mocked(restaurantOrderRepository.getOrderById).mockResolvedValue({ ...order, isHeld: true });
+
+    await expect(updateRestaurantOrder('org_1', 'order_1', 'user_1', {
+      status: 'preparing',
+    }, { canMarkPaid: true, canAdmin: true })).rejects.toMatchObject({
+      problem: { status: 409 },
+    });
+    expect(restaurantOrderRepository.updateOrder).not.toHaveBeenCalled();
+  });
+
+  it('allows a held order to move when the same update sends it to the kitchen', async () => {
+    vi.mocked(restaurantOrderRepository.getOrderById).mockResolvedValue({ ...order, isHeld: true });
+    vi.mocked(restaurantOrderRepository.updateOrder).mockResolvedValue({
+      ...order,
+      status: 'preparing',
+      isHeld: false,
+      kotStatus: 'sent',
+    });
+
+    await expect(updateRestaurantOrder('org_1', 'order_1', 'user_1', {
+      status: 'preparing',
+      kotStatus: 'sent',
+    }, { canMarkPaid: true, canAdmin: true })).resolves.toMatchObject({
+      status: 'preparing',
+      isHeld: false,
+    });
+    expect(restaurantOrderRepository.updateOrder).toHaveBeenCalledWith('org_1', 'order_1', 'user_1', expect.objectContaining({
+      status: 'preparing',
+      kotStatus: 'sent',
+      isHeld: false,
+    }));
+  });
 });
 
 describe('public restaurant order service', () => {

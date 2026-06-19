@@ -73,6 +73,11 @@ export function MenuItemRow({ item, categoryName, catalog, onCreateIngredient, o
             {!item.isAvailable ? <StatusBadge tone="neutral">Dold</StatusBadge> : null}
           </div>
           {item.description ? <p className="text-sm text-[var(--ui-text-muted)]">{item.description}</p> : null}
+          {(item.kitchenStation || (item.modifierGroups ?? []).length > 0) ? (
+            <p className="text-xs text-[var(--ui-text-muted)]">
+              {[item.kitchenStation ? `Station: ${item.kitchenStation}` : null, (item.modifierGroups ?? []).length > 0 ? `${(item.modifierGroups ?? []).length} tillvalsgrupper` : null].filter(Boolean).join(' · ')}
+            </p>
+          ) : null}
         </div>
         <p className="shrink-0 text-right text-sm tabular-nums text-[var(--ui-text-secondary)]">
           {priceSummary(item.priceCents, item.currency, item.tags)}

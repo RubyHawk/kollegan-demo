@@ -1,9 +1,16 @@
 import { prisma, Prisma } from '@platform/database/prisma';
+import { deriveMenuVariantsFromPriceTags } from '../domain/restaurant-menu.entity';
 import type {
   CreateMenuCategoryInput,
   CreateMenuItemInput,
   MenuItemIngredient,
   MenuItemIngredientInput,
+  MenuItemModifierGroup,
+  MenuItemModifierGroupInput,
+  MenuItemModifierOption,
+  MenuItemModifierOptionInput,
+  MenuItemVariant,
+  MenuItemVariantInput,
   CreateRestaurantEventInput,
   CreateReservationRequestInput,
   ListReservationRequestsInput,
@@ -39,6 +46,9 @@ type CategoryRow = {
     allergens: string[];
     tags: string[];
     ingredients: Prisma.JsonValue | null;
+    variants: Prisma.JsonValue | null;
+    modifierGroups: Prisma.JsonValue | null;
+    kitchenStation: string | null;
     isAvailable: boolean;
     sortOrder: number;
   }>;
@@ -56,6 +66,9 @@ const MENU_ITEM_SELECT = {
   allergens: true,
   tags: true,
   ingredients: true,
+  variants: true,
+  modifierGroups: true,
+  kitchenStation: true,
   isAvailable: true,
   sortOrder: true,
 } as const;
@@ -106,7 +119,142 @@ function normalizeIngredients(input: MenuItemIngredientInput[] | undefined): Men
   return ingredients;
 }
 
+function toInt(value: unknown, fallback = 0): number {
+  return Number.isFinite(value) ? Math.max(0, Math.floor(Number(value))) : fallback;
+}
+
+function stableOptionId(value: string | null, fallback: string): string {
+  return value ?? fallback.toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').slice(0, 64);
+}
+
+function parseVariants(value: Prisma.JsonValue | null | undefined): MenuItemVariant[] {
+  if (!Array.isArray(value)) return [];
+  const variants: MenuItemVariant[] = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+    const record = entry as Record<string, unknown>;
+    const name = toNullableString(record.name);
+    const priceCents = toInt(record.priceCents, -1);
+    if (!name || priceCents < 0) continue;
+    variants.push({
+      id: stableOptionId(toNullableString(record.id), name),
+      name,
+      priceCents,
+      isDefault: record.isDefault === true,
+      isAvailable: record.isAvailable !== false,
+      sortOrder: toInt(record.sortOrder, variants.length),
+    });
+  }
+  return variants.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'sv'));
+}
+
+function normalizeVariants(input: MenuItemVariantInput[] | undefined): MenuItemVariant[] {
+  if (!input) return [];
+  const variants: MenuItemVariant[] = [];
+  for (const entry of input) {
+    const name = toNullableString(entry?.name);
+    const priceCents = toInt(entry?.priceCents, -1);
+    if (!name || priceCents < 0) continue;
+    variants.push({
+      id: stableOptionId(toNullableString(entry.id), name),
+      name,
+      priceCents,
+      isDefault: entry.isDefault === true,
+      isAvailable: entry.isAvailable !== false,
+      sortOrder: toInt(entry.sortOrder, variants.length),
+    });
+  }
+  return variants.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'sv'));
+}
+
+function parseModifierOptions(value: unknown): MenuItemModifierOption[] {
+  if (!Array.isArray(value)) return [];
+  const options: MenuItemModifierOption[] = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+    const record = entry as Record<string, unknown>;
+    const name = toNullableString(record.name);
+    if (!name) continue;
+    options.push({
+      id: stableOptionId(toNullableString(record.id), name),
+      name,
+      priceDeltaCents: toInt(record.priceDeltaCents, 0),
+      isAvailable: record.isAvailable !== false,
+      sortOrder: toInt(record.sortOrder, options.length),
+    });
+  }
+  return options.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'sv'));
+}
+
+function normalizeModifierOptions(input: MenuItemModifierOptionInput[] | undefined): MenuItemModifierOption[] {
+  if (!input) return [];
+  const options: MenuItemModifierOption[] = [];
+  for (const entry of input) {
+    const name = toNullableString(entry?.name);
+    if (!name) continue;
+    options.push({
+      id: stableOptionId(toNullableString(entry.id), name),
+      name,
+      priceDeltaCents: toInt(entry.priceDeltaCents, 0),
+      isAvailable: entry.isAvailable !== false,
+      sortOrder: toInt(entry.sortOrder, options.length),
+    });
+  }
+  return options.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'sv'));
+}
+
+function parseModifierGroups(value: Prisma.JsonValue | null | undefined): MenuItemModifierGroup[] {
+  if (!Array.isArray(value)) return [];
+  const groups: MenuItemModifierGroup[] = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+    const record = entry as Record<string, unknown>;
+    const name = toNullableString(record.name);
+    if (!name) continue;
+    const options = parseModifierOptions(record.options);
+    if (options.length === 0) continue;
+    const maxSelected = Math.max(1, toInt(record.maxSelected, 1));
+    groups.push({
+      id: stableOptionId(toNullableString(record.id), name),
+      name,
+      minSelected: Math.min(toInt(record.minSelected, record.required === true ? 1 : 0), maxSelected),
+      maxSelected,
+      required: record.required === true,
+      sortOrder: toInt(record.sortOrder, groups.length),
+      options,
+    });
+  }
+  return groups.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'sv'));
+}
+
+function normalizeModifierGroups(input: MenuItemModifierGroupInput[] | undefined): MenuItemModifierGroup[] {
+  if (!input) return [];
+  const groups: MenuItemModifierGroup[] = [];
+  for (const entry of input) {
+    const name = toNullableString(entry?.name);
+    if (!name) continue;
+    const options = normalizeModifierOptions(entry.options);
+    if (options.length === 0) continue;
+    const maxSelected = Math.max(1, toInt(entry.maxSelected, 1));
+    groups.push({
+      id: stableOptionId(toNullableString(entry.id), name),
+      name,
+      minSelected: Math.min(toInt(entry.minSelected, entry.required ? 1 : 0), maxSelected),
+      maxSelected,
+      required: entry.required === true,
+      sortOrder: toInt(entry.sortOrder, groups.length),
+      options,
+    });
+  }
+  return groups.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'sv'));
+}
+
 function mapItem(row: CategoryRow['items'][number]): RestaurantMenuItemView {
+  const parsedVariants = parseVariants(row.variants);
+  const variants = parsedVariants.length > 0 || row.priceCents !== null
+    ? parsedVariants
+    : deriveMenuVariantsFromPriceTags(row.tags);
+
   return {
     id: row.id,
     categoryId: row.categoryId,
@@ -118,6 +266,9 @@ function mapItem(row: CategoryRow['items'][number]): RestaurantMenuItemView {
     allergens: row.allergens,
     tags: row.tags,
     ingredients: parseIngredients(row.ingredients),
+    variants,
+    modifierGroups: parseModifierGroups(row.modifierGroups),
+    kitchenStation: row.kitchenStation,
     isAvailable: row.isAvailable,
     sortOrder: row.sortOrder,
   };
@@ -500,6 +651,9 @@ export const restaurantMenuRepository = {
         allergens: input.allergens ?? [],
         tags: input.tags ?? [],
         ingredients: normalizeIngredients(input.ingredients) as unknown as Prisma.InputJsonValue,
+        variants: normalizeVariants(input.variants) as unknown as Prisma.InputJsonValue,
+        modifierGroups: normalizeModifierGroups(input.modifierGroups) as unknown as Prisma.InputJsonValue,
+        kitchenStation: toNullableString(input.kitchenStation),
         isAvailable: input.isAvailable ?? true,
         sortOrder: input.sortOrder ?? 0,
       },
@@ -589,6 +743,13 @@ export const restaurantMenuRepository = {
         ...(input.ingredients !== undefined
           ? { ingredients: normalizeIngredients(input.ingredients) as unknown as Prisma.InputJsonValue }
           : {}),
+        ...(input.variants !== undefined
+          ? { variants: normalizeVariants(input.variants) as unknown as Prisma.InputJsonValue }
+          : {}),
+        ...(input.modifierGroups !== undefined
+          ? { modifierGroups: normalizeModifierGroups(input.modifierGroups) as unknown as Prisma.InputJsonValue }
+          : {}),
+        ...(input.kitchenStation !== undefined ? { kitchenStation: toNullableString(input.kitchenStation) } : {}),
         ...(input.isAvailable !== undefined ? { isAvailable: input.isAvailable } : {}),
         ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
       },

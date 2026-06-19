@@ -43,8 +43,6 @@ function order(overrides: Partial<RestaurantOrderView> = {}): RestaurantOrderVie
     paymentMethod: 'card',
     fulfillmentType: 'counter',
     customerName: null,
-    customerPhone: null,
-    deliveryAddress: null,
     note: null,
     subtotalCents: 12_000,
     totalCents: 12_000,
@@ -75,7 +73,7 @@ function order(overrides: Partial<RestaurantOrderView> = {}): RestaurantOrderVie
 describe('restaurant order domain rules', () => {
   it('normalizes menu snapshots and calculates totals', () => {
     const menu = new Map([
-      ['menu_1', { id: 'menu_1', name: 'Kebabsub', priceCents: 6_000, currency: 'SEK', isAvailable: true, tags: [] }],
+      ['menu_1', { id: 'menu_1', name: 'Kebabsub', priceCents: 6_000, currency: 'SEK' }],
     ]);
 
     const items = normalizeOrderItems([
@@ -89,25 +87,117 @@ describe('restaurant order domain rules', () => {
     ]);
     expect(calculateOrderTotals(items)).toEqual({
       subtotalCents: 13_500,
+      discountCents: 0,
+      taxCents: 1_446,
+      taxRateBps: 1_200,
       totalCents: 13_500,
       currency: 'SEK',
     });
+  });
+
+  it('snapshots variants, modifiers, discount, and VAT totals', () => {
+    const menu = new Map([
+      ['menu_1', {
+        id: 'menu_1',
+        name: 'Pizza',
+        priceCents: null,
+        currency: 'SEK',
+        variants: [
+          { id: 'stor', name: 'Stor', priceCents: 10_000, isDefault: true, isAvailable: true, sortOrder: 0 },
+        ],
+        modifierGroups: [
+          {
+            id: 'sas',
+            name: 'Sås',
+            minSelected: 0,
+            maxSelected: 1,
+            required: false,
+            sortOrder: 0,
+            options: [
+              { id: 'vitlok', name: 'Vitlök', priceDeltaCents: 1_000, isAvailable: true, sortOrder: 0 },
+            ],
+          },
+        ],
+      }],
+    ]);
+
+    const items = normalizeOrderItems([
+      {
+        menuItemId: 'menu_1',
+        quantity: 2,
+        variantName: 'Stor',
+        selectedModifiers: [{
+          groupId: 'sas',
+          groupName: 'Sås',
+          optionId: 'vitlok',
+          optionName: 'Vitlök',
+          priceDeltaCents: 1_000,
+        }],
+      },
+    ], menu);
+
+    expect(items[0]).toMatchObject({
+      name: 'Pizza',
+      variantName: 'Stor',
+      variantPriceCents: 10_000,
+      modifierTotalCents: 1_000,
+      unitPriceCents: 11_000,
+      lineTotalCents: 22_000,
+    });
+    expect(calculateOrderTotals(items, 'SEK', { discountCents: 2_000, taxRateBps: 1_200 })).toEqual({
+      subtotalCents: 22_000,
+      discountCents: 2_000,
+      taxCents: 2_143,
+      taxRateBps: 1_200,
+      totalCents: 20_000,
+      currency: 'SEK',
+    });
+  });
+
+  it('rejects unavailable variants for menu-backed items', () => {
+    const menu = new Map([
+      ['menu_1', {
+        id: 'menu_1',
+        name: 'Pizza',
+        priceCents: null,
+        currency: 'SEK',
+        variants: [
+          { id: 'stor', name: 'Stor', priceCents: 10_000, isDefault: true, isAvailable: true, sortOrder: 0 },
+        ],
+      }],
+    ]);
+
+    expect(() => normalizeOrderItems([
+      {
+        menuItemId: 'menu_1',
+        quantity: 1,
+        variantName: 'Barn',
+        unitPriceCents: 1,
+      },
+    ], menu)).toThrow(/inte tillgänglig/);
   });
 
   it('builds public order lines from menu variants, dropping unorderable lines', () => {
     const items = buildPublicOrderItems([
       { menuItemId: 'pizza', quantity: 2, variantLabel: 'M', unitPriceCents: 1 },
       { menuItemId: 'cola', quantity: 1 },
-      { menuItemId: 'pizza', quantity: 1, variantLabel: 'XXL' }, // unknown size → dropped
-      { menuItemId: 'soldout', quantity: 1, variantLabel: 'Liten' }, // unavailable → dropped
-      { menuItemId: 'missing', quantity: 1 }, // unknown item → dropped
+      { menuItemId: 'pizza', quantity: 1, variantLabel: 'XXL' },
+      { menuItemId: 'soldout', quantity: 1, variantLabel: 'Liten' },
+      { menuItemId: 'missing', quantity: 1 },
     ], variantMenu);
 
-    expect(items).toEqual([
+    expect(items).toMatchObject([
       { menuItemId: 'pizza', name: '1. Det enkla (M)', quantity: 2, unitPriceCents: 11_900, lineTotalCents: 23_800, note: null, sortOrder: 0 },
       { menuItemId: 'cola', name: 'Läsk 33cl', quantity: 1, unitPriceCents: 2_500, lineTotalCents: 2_500, note: null, sortOrder: 1 },
     ]);
-    expect(calculateOrderTotals(items)).toEqual({ subtotalCents: 26_300, totalCents: 26_300, currency: 'SEK' });
+    expect(calculateOrderTotals(items)).toEqual({
+      subtotalCents: 26_300,
+      discountCents: 0,
+      taxCents: 2_818,
+      taxRateBps: 1_200,
+      totalCents: 26_300,
+      currency: 'SEK',
+    });
   });
 
   it('allows active workflow transitions and blocks terminal rollback', () => {

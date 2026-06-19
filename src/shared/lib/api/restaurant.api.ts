@@ -13,6 +13,60 @@ export interface MenuItemIngredient {
   note: string | null;
 }
 
+export interface MenuItemVariant {
+  id: string | null;
+  name: string;
+  priceCents: number;
+  isDefault: boolean;
+  isAvailable: boolean;
+  sortOrder: number;
+}
+
+export interface MenuItemVariantInput {
+  id?: string | null;
+  name: string;
+  priceCents: number;
+  isDefault?: boolean;
+  isAvailable?: boolean;
+  sortOrder?: number;
+}
+
+export interface MenuItemModifierOption {
+  id: string | null;
+  name: string;
+  priceDeltaCents: number;
+  isAvailable: boolean;
+  sortOrder: number;
+}
+
+export interface MenuItemModifierOptionInput {
+  id?: string | null;
+  name: string;
+  priceDeltaCents?: number;
+  isAvailable?: boolean;
+  sortOrder?: number;
+}
+
+export interface MenuItemModifierGroup {
+  id: string | null;
+  name: string;
+  minSelected: number;
+  maxSelected: number;
+  required: boolean;
+  sortOrder: number;
+  options: MenuItemModifierOption[];
+}
+
+export interface MenuItemModifierGroupInput {
+  id?: string | null;
+  name: string;
+  minSelected?: number;
+  maxSelected?: number;
+  required?: boolean;
+  sortOrder?: number;
+  options?: MenuItemModifierOptionInput[];
+}
+
 export interface RestaurantMenuItem {
   id: string;
   categoryId: string;
@@ -24,6 +78,9 @@ export interface RestaurantMenuItem {
   allergens: string[];
   tags: string[];
   ingredients: MenuItemIngredient[];
+  variants?: MenuItemVariant[];
+  modifierGroups?: MenuItemModifierGroup[];
+  kitchenStation?: string | null;
   isAvailable: boolean;
   sortOrder: number;
 }
@@ -147,6 +204,9 @@ export interface CreateMenuItemPayload {
   allergens?: string[];
   tags?: string[];
   ingredients?: MenuItemIngredientInput[];
+  variants?: MenuItemVariantInput[];
+  modifierGroups?: MenuItemModifierGroupInput[];
+  kitchenStation?: string | null;
   isAvailable?: boolean;
   sortOrder?: number;
 }
@@ -168,6 +228,9 @@ export interface UpdateMenuItemPayload {
   allergens?: string[];
   tags?: string[];
   ingredients?: MenuItemIngredientInput[];
+  variants?: MenuItemVariantInput[];
+  modifierGroups?: MenuItemModifierGroupInput[];
+  kitchenStation?: string | null;
   isAvailable?: boolean;
   sortOrder?: number;
 }

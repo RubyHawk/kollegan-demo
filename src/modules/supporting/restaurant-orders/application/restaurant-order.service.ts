@@ -22,6 +22,7 @@ import { restaurantOrderRepository } from '../infrastructure/restaurant-order.re
 
 const TAG = 'RestaurantOrderService';
 const RESTAURANT_TIME_ZONE = 'Europe/Stockholm';
+const KITCHEN_ORDER_STATUSES = new Set(['preparing', 'ready', 'completed']);
 
 async function requireOrdersModule(organizationId: string) {
   const enabled = await tenantHasModule(organizationId, 'restaurant_orders');
@@ -89,6 +90,13 @@ function cleanText(value: string | null | undefined): string | null {
 
 function collectMenuItemIds(input: { items: CreateRestaurantOrderItemInput[] }): string[] {
   return Array.from(new Set(input.items.map((item) => item.menuItemId).filter((id): id is string => Boolean(id))));
+}
+
+function releasesHeldOrder(input: UpdateRestaurantOrderInput): boolean {
+  return input.isHeld === false
+    || input.kotStatus === 'sent'
+    || input.kotStatus === 'printed'
+    || input.printReceipt === true;
 }
 
 export async function getCurrentBusinessDay(organizationId: string) {
@@ -163,17 +171,34 @@ export async function createRestaurantOrder(
 
   const menuItems = await restaurantOrderRepository.findMenuItemsByIds(organizationId, collectMenuItemIds(input));
   const menuMap = new Map(menuItems.map((item) => [item.id, item]));
-  const items = normalizeOrderItems(input.items, menuMap);
+  const items = (() => {
+    try {
+      return normalizeOrderItems(input.items, menuMap);
+    } catch (err) {
+      throw Errors.validation((err as Error).message);
+    }
+  })();
   if (items.length === 0) throw Errors.validation('Ordern behöver minst en rad.');
+  if (input.printReceipt && input.isHeld) throw Errors.validation('En parkerad order kan inte skrivas ut som skickad.');
 
   const currency = menuItems.find((item) => item.currency)?.currency ?? 'SEK';
-  const totals = calculateOrderTotals(items, currency);
+  const totals = calculateOrderTotals(items, currency, {
+    discountCents: input.discountCents,
+    taxRateBps: input.taxRateBps,
+  });
+  const isHeld = input.isHeld === true;
+  const kotStatus = isHeld ? 'not_sent' : input.sendToKitchen || input.printReceipt ? 'sent' : 'not_sent';
   const order = await restaurantOrderRepository.createOrder(organizationId, businessDay.id, actorId, {
-    fulfillmentType: input.fulfillmentType ?? 'takeaway',
+    fulfillmentType: input.fulfillmentType ?? 'counter',
     customerName: cleanText(input.customerName),
+    tableLabel: cleanText(input.tableLabel),
+    bookingReference: cleanText(input.bookingReference),
     note: cleanText(input.note),
     paymentStatus: input.paymentStatus ?? 'unpaid',
     paymentMethod: input.paymentMethod ?? null,
+    isHeld,
+    kotStatus,
+    printReceipt: input.printReceipt === true,
     items,
     totals,
   });
@@ -262,6 +287,14 @@ export async function updateRestaurantOrder(
     if (input.status === 'cancelled' && !options.canAdmin) {
       throw Errors.forbidden('Endast ansvarig kan makulera ordrar.');
     }
+    if (
+      existing.isHeld
+      && input.status !== existing.status
+      && KITCHEN_ORDER_STATUSES.has(input.status)
+      && !releasesHeldOrder(input)
+    ) {
+      throw Errors.conflict('Skicka ordern till köket innan statusen ändras.');
+    }
     try {
       assertOrderStatusTransition(existing.status, input.status);
     } catch (err) {
@@ -272,7 +305,10 @@ export async function updateRestaurantOrder(
   const updated = await restaurantOrderRepository.updateOrder(organizationId, orderId, actorId, {
     ...input,
     customerName: input.customerName !== undefined ? cleanText(input.customerName) : undefined,
+    tableLabel: input.tableLabel !== undefined ? cleanText(input.tableLabel) : undefined,
+    bookingReference: input.bookingReference !== undefined ? cleanText(input.bookingReference) : undefined,
     note: input.note !== undefined ? cleanText(input.note) : undefined,
+    isHeld: input.kotStatus === 'sent' || input.kotStatus === 'printed' || input.printReceipt ? false : input.isHeld,
   });
   if (!updated) throw Errors.notFound('Restaurant order');
   logger.info(TAG, 'Restaurant order updated', { organizationId, actorId, orderId });

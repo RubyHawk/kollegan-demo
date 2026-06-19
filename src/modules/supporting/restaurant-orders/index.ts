@@ -8,6 +8,8 @@ export type {
   RestaurantBusinessDayStatus,
   RestaurantBusinessDayView,
   RestaurantFulfillmentType,
+  RestaurantKotStatus,
+  RestaurantOrderModifierSelection,
   RestaurantOrderItemView,
   RestaurantOrderSource,
   RestaurantOrderStatus,
@@ -21,11 +23,13 @@ export type {
 } from './domain/restaurant-order.entity';
 export {
   PUBLIC_FULFILLMENT_TYPES,
+  RESTAURANT_KOT_STATUSES,
   RESTAURANT_FULFILLMENT_TYPES,
   RESTAURANT_ORDER_STATUSES,
   RESTAURANT_PAYMENT_METHODS,
   RESTAURANT_PAYMENT_STATUSES,
   assertOrderStatusTransition,
+  buildPublicOrderItems,
   buildOrderSummary,
   calculateOrderTotals,
   isActiveOrderStatus,

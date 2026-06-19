@@ -57,7 +57,13 @@ function timeLabel(value: string) {
 }
 
 function orderLine(order: RestaurantOrder) {
-  return order.items.map((item) => `${item.quantity} ${item.name}`).join(', ');
+  return order.items.map((item) => {
+    const details = [
+      item.variantName,
+      (item.selectedModifiers ?? []).map((modifier) => modifier.optionName).join(', '),
+    ].filter(Boolean).join(' · ');
+    return `${item.quantity} ${item.name}${details ? ` (${details})` : ''}`;
+  }).join(', ');
 }
 
 function orderNotes(order: RestaurantOrder) {
@@ -66,6 +72,17 @@ function orderNotes(order: RestaurantOrder) {
     .map((item) => `${item.name}: ${item.note}`)
     .join(' · ');
   return [order.note, itemNotes].filter(Boolean).join(' · ');
+}
+
+function fulfillmentLabel(order: RestaurantOrder) {
+  const base: Record<RestaurantOrder['fulfillmentType'], string> = {
+    counter: 'Disk',
+    takeaway: 'Takeaway',
+    dine_in: 'Bord',
+    booking_linked: 'Bokning',
+    delivery: 'Leverans',
+  };
+  return [base[order.fulfillmentType], order.tableLabel, order.bookingReference].filter(Boolean).join(' · ');
 }
 
 function nextActions(order: RestaurantOrder): Array<{ status: KitchenStatus; label: string }> {
@@ -93,7 +110,7 @@ export function KitchenOrdersClient({
 
   const activeOrders = useMemo(
     () => [...orders]
-      .filter((order) => ['new', 'preparing', 'ready'].includes(order.status))
+      .filter((order) => ['new', 'preparing', 'ready'].includes(order.status) && !order.isHeld)
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
     [orders],
   );
@@ -191,7 +208,7 @@ export function KitchenOrdersClient({
                             </StatusBadge>
                           </div>
                           <p className="mt-1 text-xs text-[var(--ui-text-muted)]">
-                            {timeLabel(order.createdAt)} · {money(order.totalCents)}
+                            {timeLabel(order.createdAt)} · {fulfillmentLabel(order)} · {money(order.totalCents)}
                           </p>
                         </div>
                       </div>

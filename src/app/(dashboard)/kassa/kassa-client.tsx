@@ -1,12 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { AttendanceControls } from '../(shell)/narvaro/attendance-controls';
 import { Button } from '@shared/ui/button';
 import { InlineAlert } from '@shared/ui/inline-alert';
 import { StatusBadge } from '@shared/ui/status-badge';
-import { cn } from '@shared/lib/utils';
 import type { AttendanceShift } from '@shared/lib/api/attendance.api';
 import type { RestaurantMenuCategory, RestaurantMenuItem } from '@shared/lib/api/restaurant.api';
 import {
@@ -17,14 +15,26 @@ import {
   startBusinessDay,
   updateRestaurantOrder,
   type RestaurantBusinessDay,
+  type RestaurantFulfillmentType,
   type RestaurantOrder,
   type RestaurantOrderStatus,
   type RestaurantOrderSummary,
   type RestaurantPaymentMethod,
 } from '@shared/lib/api/restaurant-orders.api';
 import { KassaActiveOrdersStrip } from './kassa-active-orders-strip';
+import { KassaPortalRail } from './kassa-portal-rail';
+import { KassaProductOptionsDialog } from './kassa-product-options-dialog';
+import { KassaProductWorkbench } from './kassa-product-workbench';
 import { KassaReceiptPanel } from './kassa-receipt-panel';
-import { availableItems, type DraftItem, money, normalizePriceInput, timeLabel } from './kassa-helpers';
+import {
+  availableItems,
+  type DraftItem,
+  menuItemBasePrice,
+  normalizePriceInput,
+  timeLabel,
+} from './kassa-helpers';
+
+type CreateOrderAction = 'hold' | 'send' | 'print';
 
 export function KassaClient({
   initialMenu,
@@ -53,8 +63,14 @@ export function KassaClient({
   const [activeOrders, setActiveOrders] = useState(initialActiveOrders);
   const [summary, setSummary] = useState(initialSummary);
   const [selectedCategoryId, setSelectedCategoryId] = useState(categories[0]?.id ?? '');
+  const [productSearch, setProductSearch] = useState('');
+  const [optionsItem, setOptionsItem] = useState<RestaurantMenuItem | null>(null);
   const [draftItems, setDraftItems] = useState<DraftItem[]>([]);
+  const [fulfillmentType, setFulfillmentType] = useState<RestaurantFulfillmentType>('counter');
+  const [tableLabel, setTableLabel] = useState('');
+  const [bookingReference, setBookingReference] = useState('');
   const [orderNote, setOrderNote] = useState('');
+  const [discountInput, setDiscountInput] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<RestaurantPaymentMethod>('card');
   const [paidNow, setPaidNow] = useState(canMarkPaid);
   const [customName, setCustomName] = useState('');
@@ -84,8 +100,11 @@ export function KassaClient({
     if (!canMarkPaid && paidNow) setPaidNow(false);
   }, [canMarkPaid, paidNow]);
 
-  const selectedCategory = categories.find((category) => category.id === selectedCategoryId) ?? categories[0] ?? null;
   const draftTotalCents = draftItems.reduce((sum, item) => sum + item.quantity * item.unitPriceCents, 0);
+  const discountCents = Math.min(draftTotalCents, normalizePriceInput(discountInput) ?? 0);
+  const taxableCents = Math.max(0, draftTotalCents - discountCents);
+  const taxRateBps = 1200;
+  const taxCents = taxableCents > 0 ? Math.round((taxableCents * taxRateBps) / (10_000 + taxRateBps)) : 0;
 
   async function refreshOrdersAndSummary() {
     const [orders, nextSummary] = await Promise.all([
@@ -111,27 +130,60 @@ export function KassaClient({
     }
   }
 
-  function addMenuItem(item: RestaurantMenuItem) {
-    const priceCents = item.priceCents;
-    if (priceCents === null) return;
+  function lineSignature(item: Omit<DraftItem, 'draftId' | 'quantity'>) {
+    return [
+      item.menuItemId ?? 'custom',
+      item.name,
+      item.variantName ?? '',
+      item.unitPriceCents,
+      JSON.stringify(item.selectedModifiers),
+      item.note ?? '',
+    ].join(':');
+  }
+
+  function addDraftLine(line: Omit<DraftItem, 'draftId'>) {
     setDraftItems((current) => {
-      const existing = current.find((draft) => draft.menuItemId === item.id && !draft.note);
+      const signature = lineSignature(line);
+      const existing = current.find((draft) => lineSignature(draft) === signature);
       if (existing) {
         return current.map((draft) => (
-          draft.draftId === existing.draftId ? { ...draft, quantity: draft.quantity + 1 } : draft
+          draft.draftId === existing.draftId ? { ...draft, quantity: draft.quantity + line.quantity } : draft
         ));
       }
       return [
         ...current,
         {
-          draftId: `${item.id}:${Date.now()}:${Math.random().toString(36).slice(2)}`,
-          menuItemId: item.id,
-          name: item.name,
-          quantity: 1,
-          unitPriceCents: priceCents,
-          note: null,
+          ...line,
+          draftId: `${line.menuItemId ?? 'custom'}:${Date.now()}:${Math.random().toString(36).slice(2)}`,
         },
       ];
+    });
+  }
+
+  function addMenuItem(item: RestaurantMenuItem) {
+    const variants = item.variants ?? [];
+    const modifierGroups = item.modifierGroups ?? [];
+    const needsOptions = variants.filter((variant) => variant.isAvailable).length > 1
+      || modifierGroups.some((group) => group.options.some((option) => option.isAvailable));
+    if (needsOptions) {
+      setOptionsItem(item);
+      return;
+    }
+    const variant = variants.find((candidate) => candidate.isAvailable && candidate.isDefault)
+      ?? variants.find((candidate) => candidate.isAvailable)
+      ?? null;
+    const priceCents = variant?.priceCents ?? menuItemBasePrice(item);
+    if (priceCents === null) return;
+    addDraftLine({
+      menuItemId: item.id,
+      name: item.name,
+      quantity: 1,
+      variantName: variant?.name ?? null,
+      variantPriceCents: variant?.priceCents ?? null,
+      selectedModifiers: [],
+      modifierTotalCents: 0,
+      unitPriceCents: priceCents,
+      note: null,
     });
   }
 
@@ -163,6 +215,10 @@ export function KassaClient({
         menuItemId: null,
         name,
         quantity: 1,
+        variantName: null,
+        variantPriceCents: null,
+        selectedModifiers: [],
+        modifierTotalCents: 0,
         unitPriceCents: priceCents,
         note: null,
       },
@@ -204,6 +260,10 @@ export function KassaClient({
   }
 
   async function submitOrder() {
+    return submitOrderWithAction('send');
+  }
+
+  async function submitOrderWithAction(action: CreateOrderAction) {
     if (!businessDay) {
       setError('Starta dagen först.');
       return;
@@ -215,23 +275,37 @@ export function KassaClient({
 
     await run('create-order', async () => {
       const order = await createRestaurantOrder({
-        fulfillmentType: 'counter',
+        fulfillmentType,
+        tableLabel: fulfillmentType === 'dine_in' ? tableLabel.trim() || null : null,
+        bookingReference: fulfillmentType === 'booking_linked' ? bookingReference.trim() || null : null,
         note: orderNote.trim() || null,
+        discountCents,
+        taxRateBps,
+        isHeld: action === 'hold',
+        sendToKitchen: action === 'send' || action === 'print',
+        printReceipt: action === 'print',
         paymentStatus: canMarkPaid && paidNow ? 'paid' : 'unpaid',
         paymentMethod: canMarkPaid && paidNow ? paymentMethod : null,
         items: draftItems.map((item) => ({
           menuItemId: item.menuItemId,
           name: item.menuItemId ? undefined : item.name,
           quantity: item.quantity,
+          variantName: item.variantName,
+          variantPriceCents: item.variantPriceCents,
+          selectedModifiers: item.selectedModifiers,
+          modifierTotalCents: item.modifierTotalCents,
           unitPriceCents: item.unitPriceCents,
           note: item.note,
         })),
       });
       setDraftItems([]);
       setOrderNote('');
+      setDiscountInput('');
+      setTableLabel('');
+      setBookingReference('');
       setActiveOrders((current) => [order, ...current.filter((item) => item.id !== order.id)]);
       await refreshOrdersAndSummary();
-      setSuccess(`Order ${order.orderNumber} skapad.`);
+      setSuccess(action === 'hold' ? `Order ${order.orderNumber} parkerad.` : `Order ${order.orderNumber} skickad.`);
     });
   }
 
@@ -246,7 +320,19 @@ export function KassaClient({
     });
   }
 
+  async function sendHeldOrder(order: RestaurantOrder) {
+    await run(`send:${order.id}`, async () => {
+      await updateRestaurantOrder(order.id, { isHeld: false, kotStatus: 'sent' });
+      await refreshOrdersAndSummary();
+    });
+  }
+
   async function moveOrder(order: RestaurantOrder, status: RestaurantOrderStatus) {
+    const isKitchenStatus = status === 'preparing' || status === 'ready' || status === 'completed';
+    if (isKitchenStatus && order.isHeld) {
+      setError('Skicka ordern till köket innan statusen ändras.');
+      return;
+    }
     if (status === 'completed' && order.paymentStatus !== 'paid') {
       setError('Ordern behöver vara betald innan utlämning.');
       return;
@@ -258,141 +344,145 @@ export function KassaClient({
   }
 
   return (
-    <main
-      data-brand="fluffys"
-      className="min-h-dvh overflow-hidden bg-[var(--ui-bg)] text-[var(--ui-text)]"
-    >
-      <div className="flex h-dvh flex-col">
-        <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-3">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase text-[var(--ui-accent-active)]">Fluffy&apos;s kassa</p>
-            <h1 className="truncate text-xl font-semibold">Driftläge</h1>
-          </div>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <StatusBadge tone={online ? 'success' : 'warning'}>{online ? 'Online' : 'Offline'}</StatusBadge>
-            <StatusBadge tone={businessDay ? 'success' : 'neutral'}>
-              {businessDay ? `Startad ${timeLabel(businessDay.openedAt)}` : 'Stängd'}
-            </StatusBadge>
-            <Button asChild variant="secondary" size="compact">
-              <Link href="/">Översikt</Link>
-            </Button>
-            {businessDay && canAdmin ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="compact"
-                loading={busy === 'close-day'}
-                onClick={handleCloseDay}
-              >
-                Avsluta dag
-              </Button>
-            ) : null}
-          </div>
-        </header>
+    <main data-brand="fluffys" className="min-h-dvh overflow-hidden bg-[var(--ui-bg)] text-[var(--ui-text)]">
+      <div className="flex h-dvh">
+        <KassaPortalRail />
 
-        {!businessDay ? (
-          <section className="grid min-h-0 flex-1 place-items-center p-4">
-            <div className="w-full max-w-2xl space-y-4 rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5">
-              <div className="space-y-1">
-                <h2 className="text-2xl font-semibold">Starta dagen</h2>
-                <p className="text-sm text-[var(--ui-text-muted)]">Kassan öppnas för dagens interna beställningar.</p>
-              </div>
-              {error ? <InlineAlert tone="danger">{error}</InlineAlert> : null}
-              {success ? <InlineAlert tone="success">{success}</InlineAlert> : null}
-              <AttendanceControls initialShift={initialShift} />
-              <Button
-                type="button"
-                size="lg"
-                className="h-14 w-full text-base"
-                loading={busy === 'start-day'}
-                onClick={handleStartDay}
-              >
-                Starta dagen
-              </Button>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-3">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase text-[var(--ui-accent-active)]">Fluffy&apos;s personalportal</p>
+              <h1 className="truncate text-xl font-semibold">Kassa</h1>
             </div>
-          </section>
-        ) : (
-          <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_430px]">
-            <section className="grid min-h-0 grid-rows-[auto_1fr] border-r border-[var(--ui-border)]">
-              <div className="flex min-h-[72px] items-center gap-2 overflow-x-auto border-b border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 py-2">
-                {categories.map((category) => (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() => setSelectedCategoryId(category.id)}
-                    className={cn(
-                      'h-12 shrink-0 rounded-[var(--ui-radius-md)] border px-4 text-sm font-semibold transition-colors',
-                      selectedCategory?.id === category.id
-                        ? 'border-[var(--ui-accent-border)] bg-[var(--ui-accent)] text-[var(--ui-text-inverse)]'
-                        : 'border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)] hover:bg-[var(--ui-surface-hover)]',
-                    )}
-                  >
-                    {category.name}
-                  </button>
-                ))}
-              </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <StatusBadge tone={online ? 'success' : 'warning'}>{online ? 'Online' : 'Offline'}</StatusBadge>
+              <StatusBadge tone={businessDay ? 'success' : 'neutral'}>
+                {businessDay ? `Startad ${timeLabel(businessDay.openedAt)}` : 'Stängd'}
+              </StatusBadge>
+              <StatusBadge tone={initialShift ? 'success' : 'neutral'}>
+                {initialShift ? 'Incheckad' : 'Ej incheckad'}
+              </StatusBadge>
+              {canReadReports ? (
+                <StatusBadge tone={(summary?.unpaidOrderCount ?? 0) > 0 ? 'warning' : 'success'}>
+                  {summary?.unpaidOrderCount ?? 0} obetalda
+                </StatusBadge>
+              ) : null}
+              {businessDay && canAdmin ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="compact"
+                  loading={busy === 'close-day'}
+                  onClick={handleCloseDay}
+                >
+                  Avsluta dag
+                </Button>
+              ) : null}
+            </div>
+          </header>
 
-              <div className="min-h-0 overflow-y-auto p-3">
-                {selectedCategory ? (
-                  <div className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-4">
-                    {availableItems(selectedCategory).map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => addMenuItem(item)}
-                        className="flex min-h-[112px] flex-col justify-between rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3 text-left shadow-sm transition-colors hover:border-[var(--ui-accent-border)] hover:bg-[var(--ui-surface-hover)] active:bg-[var(--ui-surface-selected)]"
-                      >
-                        <span className="line-clamp-3 text-base font-semibold leading-5">{item.name}</span>
-                        <span className="mt-3 text-lg font-bold tabular-nums">{money(item.priceCents ?? 0)}</span>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid h-full place-items-center text-sm text-[var(--ui-text-muted)]">Ingen prissatt meny hittades.</div>
-                )}
+          {!businessDay ? (
+            <section className="grid min-h-0 flex-1 place-items-center p-4">
+              <div className="w-full max-w-2xl space-y-4 rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5">
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-semibold">Starta dagen</h2>
+                  <p className="text-sm text-[var(--ui-text-muted)]">Kassan öppnas för dagens beställningar och dagavslut.</p>
+                </div>
+                {error ? <InlineAlert tone="danger">{error}</InlineAlert> : null}
+                {success ? <InlineAlert tone="success">{success}</InlineAlert> : null}
+                <AttendanceControls initialShift={initialShift} />
+                <Button
+                  type="button"
+                  size="lg"
+                  className="h-14 w-full text-base"
+                  loading={busy === 'start-day'}
+                  onClick={handleStartDay}
+                >
+                  Starta dagen
+                </Button>
               </div>
             </section>
+          ) : (
+            <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] 2xl:grid-cols-[minmax(0,1fr)_450px]">
+              <KassaProductWorkbench
+                categories={categories}
+                selectedCategoryId={selectedCategoryId}
+                productSearch={productSearch}
+                activeOrderCount={activeOrders.length}
+                draftLineCount={draftItems.length}
+                summary={summary}
+                currentShift={initialShift}
+                canReadReports={canReadReports}
+                onProductSearchChange={setProductSearch}
+                onSelectedCategoryChange={setSelectedCategoryId}
+                onAddMenuItem={addMenuItem}
+              />
 
-            <KassaReceiptPanel
-              draftItems={draftItems}
-              draftTotalCents={draftTotalCents}
-              error={error}
-              success={success}
-              customName={customName}
-              customPrice={customPrice}
-              orderNote={orderNote}
-              paymentMethod={paymentMethod}
-              paidNow={paidNow}
-              canMarkPaid={canMarkPaid}
-              busy={busy}
-              online={online}
-              onClear={() => {
-                setDraftItems([]);
-                setOrderNote('');
-              }}
-              onChangeQuantity={changeQuantity}
-              onChangeItemNote={changeItemNote}
-              onCustomNameChange={setCustomName}
-              onCustomPriceChange={setCustomPrice}
-              onOrderNoteChange={setOrderNote}
-              onAddCustomItem={addCustomItem}
-              onPaidNowChange={setPaidNow}
-              onPaymentMethodChange={setPaymentMethod}
-              onSubmitOrder={submitOrder}
-            />
-          </div>
-        )}
+              <KassaReceiptPanel
+                draftItems={draftItems}
+                draftTotalCents={draftTotalCents}
+                discountCents={discountCents}
+                taxCents={taxCents}
+                totalCents={taxableCents}
+                error={error}
+                success={success}
+                fulfillmentType={fulfillmentType}
+                tableLabel={tableLabel}
+                bookingReference={bookingReference}
+                customName={customName}
+                customPrice={customPrice}
+                orderNote={orderNote}
+                discountInput={discountInput}
+                paymentMethod={paymentMethod}
+                paidNow={paidNow}
+                canMarkPaid={canMarkPaid}
+                busy={busy}
+                online={online}
+                onClear={() => {
+                  setDraftItems([]);
+                  setOrderNote('');
+                  setDiscountInput('');
+                }}
+                onFulfillmentTypeChange={setFulfillmentType}
+                onTableLabelChange={setTableLabel}
+                onBookingReferenceChange={setBookingReference}
+                onChangeQuantity={changeQuantity}
+                onChangeItemNote={changeItemNote}
+                onCustomNameChange={setCustomName}
+                onCustomPriceChange={setCustomPrice}
+                onOrderNoteChange={setOrderNote}
+                onDiscountInputChange={setDiscountInput}
+                onAddCustomItem={addCustomItem}
+                onPaidNowChange={setPaidNow}
+                onPaymentMethodChange={setPaymentMethod}
+                onSubmitOrder={submitOrder}
+                onSubmitOrderAction={submitOrderWithAction}
+              />
+            </div>
+          )}
 
-        <KassaActiveOrdersStrip
-          businessDay={businessDay}
-          summary={summary}
-          activeOrders={activeOrders}
-          busy={busy}
-          canMarkPaid={canMarkPaid}
-          canAdmin={canAdmin}
-          canReadReports={canReadReports}
-          onMarkPaid={markPaid}
-          onMoveOrder={moveOrder}
+          <KassaActiveOrdersStrip
+            businessDay={businessDay}
+            summary={summary}
+            activeOrders={activeOrders}
+            busy={busy}
+            canMarkPaid={canMarkPaid}
+            canAdmin={canAdmin}
+            canReadReports={canReadReports}
+            onMarkPaid={markPaid}
+            onSendHeld={sendHeldOrder}
+            onMoveOrder={moveOrder}
+          />
+        </div>
+
+        <KassaProductOptionsDialog
+          key={optionsItem?.id ?? 'empty-options'}
+          item={optionsItem}
+          open={Boolean(optionsItem)}
+          onOpenChange={(open) => {
+            if (!open) setOptionsItem(null);
+          }}
+          onAdd={addDraftLine}
         />
       </div>
     </main>

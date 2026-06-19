@@ -1,4 +1,4 @@
-﻿import { upsertStyleTag } from './document-styles';
+import { upsertStyleTag } from './document-styles';
 
 /** Style injection for structured offer line items. */
 export function injectStructuredLineItemStyles(html: string): string {
