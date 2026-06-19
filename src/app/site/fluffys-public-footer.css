@@ -194,6 +194,19 @@
   transform: translateY(-1px);
 }
 
+/* "Beställ" is the filled primary in the footer too; "Boka bord" stays the ghost outline. */
+.fluffy-footer__cta--order {
+  background: var(--fp-orange);
+  color: var(--fp-ink);
+}
+
+.fluffy-footer__cta--order:hover,
+.fluffy-footer__cta--order:focus-visible {
+  background: var(--fp-orange-dark);
+  border-color: var(--fp-orange-dark);
+  color: var(--fp-white);
+}
+
 /* bottom bar */
 .fluffy-footer__bar {
   border-top: 1px solid rgba(255, 250, 240, 0.12);

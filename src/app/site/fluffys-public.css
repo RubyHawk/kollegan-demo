@@ -183,6 +183,19 @@ body:has(.fluffy-public) {
   transform: translateY(-1px);
 }
 
+/* "Beställ" is the filled primary action; "Boka bord" stays the ghost outline beside it. */
+.fluffy-header__cta--order {
+  background: var(--fp-orange);
+  color: var(--fp-ink);
+}
+
+.fluffy-header__cta--order:hover,
+.fluffy-header__cta--order:focus-visible {
+  background: var(--fp-orange-dark);
+  border-color: var(--fp-orange-dark);
+  color: var(--fp-white);
+}
+
 .fluffy-fallback {
   border-bottom: 1px solid rgba(242, 140, 0, 0.55);
   background: rgba(242, 140, 0, 0.18);
@@ -435,6 +448,11 @@ body:has(.fluffy-public) {
     min-height: 40px;
     font-size: 0.78rem;
     padding: 0 16px;
+  }
+
+  /* On mobile keep just the filled "Beställ" in the header; "Boka bord" lives in the menu. */
+  .fluffy-header__cta--book {
+    display: none;
   }
 
   .fluffy-section,

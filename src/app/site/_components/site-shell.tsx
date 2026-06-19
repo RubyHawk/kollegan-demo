@@ -54,8 +54,11 @@ export function SiteShell({
             ))}
           </nav>
           <div className="fluffy-header__actions">
-            <Link href={publicSiteHref(routePrefix, '/boka')} className="fluffy-header__cta">
-              Beställ / Boka
+            <Link href={publicSiteHref(routePrefix, '/boka')} className="fluffy-header__cta fluffy-header__cta--book">
+              Boka bord
+            </Link>
+            <Link href={publicSiteHref(routePrefix, '/bestall')} className="fluffy-header__cta fluffy-header__cta--order">
+              Beställ
             </Link>
             <details className="fluffy-header__menu">
               <summary aria-label="Öppna meny">
@@ -67,7 +70,8 @@ export function SiteShell({
                     {item.label}
                   </Link>
                 ))}
-                <Link href={publicSiteHref(routePrefix, '/boka')}>Beställ / Boka</Link>
+                <Link href={publicSiteHref(routePrefix, '/bestall')}>Beställ</Link>
+                <Link href={publicSiteHref(routePrefix, '/boka')}>Boka bord</Link>
               </nav>
             </details>
           </div>

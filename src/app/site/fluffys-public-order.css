@@ -1,0 +1,69 @@
+/* Ordering hub (/bestall): the "Avhämtning" (pickup) and "Leverans" (delivery) cards. Scoped to
+   .fluffy-public; reuses --fp-* tokens and the shared .fluffy-card / .fluffy-button system. */
+
+.fluffy-order-grid {
+  display: grid;
+  gap: 24px;
+}
+
+@media (min-width: 760px) {
+  .fluffy-order-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.fluffy-order-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 28px;
+}
+
+.fluffy-order-icon {
+  display: inline-grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  margin-bottom: 14px;
+  border: 2px solid var(--fp-orange);
+  border-radius: 14px;
+  background: rgba(242, 140, 0, 0.12);
+  color: var(--fp-orange-dark);
+}
+
+.fluffy-order-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.fluffy-order-card h2 {
+  margin: 0;
+  color: var(--fp-ink);
+  font-family: var(--fluffy-display-font);
+  font-size: 1.6rem;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.fluffy-order-card p {
+  margin: 12px 0 0;
+  max-width: 42ch;
+  color: rgba(9, 8, 7, 0.72);
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+.fluffy-order-card .fluffy-button {
+  margin-top: 20px;
+}
+
+.fluffy-order-card .fluffy-muted {
+  margin-top: 12px;
+}
+
+.fluffy-order-providers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
