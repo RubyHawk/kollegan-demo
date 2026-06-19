@@ -409,6 +409,7 @@ body:has(.fluffy-public) {
   .fluffy-header__inner {
     min-height: 76px;
     gap: 12px;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .fluffy-brand__mark {
@@ -417,12 +418,23 @@ body:has(.fluffy-public) {
   }
 
   .fluffy-brand__text strong {
+    overflow: hidden;
     font-size: 1.05rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .fluffy-header__cta,
+  /* Keep the booking action reachable on mobile (roadside = mobile-first); only the
+     desktop nav and the secondary tagline collapse into the hamburger / are hidden. */
+  .fluffy-brand__text small,
   .fluffy-nav {
     display: none;
+  }
+
+  .fluffy-header__cta {
+    min-height: 40px;
+    font-size: 0.78rem;
+    padding: 0 16px;
   }
 
   .fluffy-section,

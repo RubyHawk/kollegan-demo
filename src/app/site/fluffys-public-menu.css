@@ -322,8 +322,8 @@
 
 .fluffy-item__allergens {
   margin: 6px 0 0;
-  color: rgba(9, 8, 7, 0.42);
-  font-size: 0.74rem;
+  color: rgba(9, 8, 7, 0.6);
+  font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -349,8 +349,8 @@
 }
 
 .fluffy-price__tier abbr {
-  color: rgba(9, 8, 7, 0.45);
-  font-size: 0.6rem;
+  color: rgba(9, 8, 7, 0.58);
+  font-size: 0.66rem;
   font-weight: 900;
   letter-spacing: 0.05em;
   text-decoration: none;
