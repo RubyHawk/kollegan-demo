@@ -1,7 +1,8 @@
 export const RESTAURANT_ORDER_STATUSES = ['new', 'preparing', 'ready', 'completed', 'cancelled'] as const;
 export const RESTAURANT_PAYMENT_STATUSES = ['unpaid', 'paid', 'refunded'] as const;
 export const RESTAURANT_PAYMENT_METHODS = ['cash', 'card', 'swish', 'other'] as const;
-export const RESTAURANT_FULFILLMENT_TYPES = ['takeaway', 'dine_in', 'counter'] as const;
+export const RESTAURANT_FULFILLMENT_TYPES = ['takeaway', 'dine_in', 'counter', 'delivery'] as const;
+export const PUBLIC_FULFILLMENT_TYPES = ['takeaway', 'delivery'] as const;
 
 export type RestaurantOrderStatus = (typeof RESTAURANT_ORDER_STATUSES)[number];
 export type RestaurantPaymentStatus = (typeof RESTAURANT_PAYMENT_STATUSES)[number];
@@ -47,6 +48,8 @@ export interface RestaurantOrderView {
   paymentMethod: RestaurantPaymentMethod | null;
   fulfillmentType: RestaurantFulfillmentType;
   customerName: string | null;
+  customerPhone: string | null;
+  deliveryAddress: string | null;
   note: string | null;
   subtotalCents: number;
   totalCents: number;
@@ -108,6 +111,20 @@ export interface RestaurantMenuItemSnapshot {
   name: string;
   priceCents: number | null;
   currency: string;
+  isAvailable: boolean;
+}
+
+export type PublicFulfillmentType = (typeof PUBLIC_FULFILLMENT_TYPES)[number];
+
+// Customer-facing online order (public website). Name + phone are required so the kitchen can
+// reach the customer; deliveryAddress is required by the service when fulfillmentType = delivery.
+export interface CreatePublicRestaurantOrderInput {
+  fulfillmentType: PublicFulfillmentType;
+  customerName: string;
+  customerPhone: string;
+  deliveryAddress?: string | null;
+  note?: string | null;
+  items: CreateRestaurantOrderItemInput[];
 }
 
 export interface NormalizedOrderItem {

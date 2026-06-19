@@ -1,8 +1,10 @@
 export type {
   CloseBusinessDayInput,
+  CreatePublicRestaurantOrderInput,
   CreateRestaurantOrderInput,
   CreateRestaurantOrderItemInput,
   ListRestaurantOrdersInput,
+  PublicFulfillmentType,
   RestaurantBusinessDayStatus,
   RestaurantBusinessDayView,
   RestaurantFulfillmentType,
@@ -18,6 +20,7 @@ export type {
   UpdateRestaurantOrderInput,
 } from './domain/restaurant-order.entity';
 export {
+  PUBLIC_FULFILLMENT_TYPES,
   RESTAURANT_FULFILLMENT_TYPES,
   RESTAURANT_ORDER_STATUSES,
   RESTAURANT_PAYMENT_METHODS,
@@ -30,6 +33,7 @@ export {
 } from './domain/restaurant-order.entity';
 export {
   closeBusinessDay,
+  createPublicRestaurantOrder,
   createRestaurantOrder,
   getCurrentBusinessDay,
   getRestaurantOrderSummary,
@@ -39,6 +43,7 @@ export {
 } from './application/restaurant-order.service';
 export {
   handleCloseBusinessDay,
+  handleCreatePublicRestaurantOrder,
   handleCreateRestaurantOrder,
   handleGetCurrentBusinessDay,
   handleGetRestaurantOrderSummary,

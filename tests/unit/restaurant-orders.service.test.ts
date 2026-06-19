@@ -8,6 +8,10 @@ vi.mock('@platform/logging/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
+vi.mock('@modules/supporting/restaurant-menu', () => ({
+  resolvePublicRestaurantOrganization: vi.fn(),
+}));
+
 vi.mock('../../src/modules/supporting/restaurant-orders/infrastructure/restaurant-order.repository', () => ({
   restaurantOrderRepository: {
     getOpenBusinessDay: vi.fn(),
@@ -25,8 +29,10 @@ vi.mock('../../src/modules/supporting/restaurant-orders/infrastructure/restauran
 }));
 
 import { tenantHasModule } from '@platform/tenancy/tenant-resolver';
+import { resolvePublicRestaurantOrganization } from '@modules/supporting/restaurant-menu';
 import {
   closeBusinessDay,
+  createPublicRestaurantOrder,
   createRestaurantOrder,
   getRestaurantOrderSummary,
   startBusinessDay,
@@ -64,6 +70,8 @@ const order: RestaurantOrderView = {
   paymentMethod: null,
   fulfillmentType: 'counter',
   customerName: null,
+  customerPhone: null,
+  deliveryAddress: null,
   note: null,
   subtotalCents: 6_000,
   totalCents: 6_000,
@@ -82,9 +90,10 @@ describe('restaurant order service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(tenantHasModule).mockResolvedValue(true);
+    vi.mocked(resolvePublicRestaurantOrganization).mockResolvedValue('org_1');
     vi.mocked(restaurantOrderRepository.getOpenBusinessDay).mockResolvedValue(day);
     vi.mocked(restaurantOrderRepository.findMenuItemsByIds).mockResolvedValue([
-      { id: 'menu_1', name: 'Kebabsub', priceCents: 6_000, currency: 'SEK' },
+      { id: 'menu_1', name: 'Kebabsub', priceCents: 6_000, currency: 'SEK', isAvailable: true },
     ]);
     vi.mocked(restaurantOrderRepository.createOrder).mockResolvedValue(order);
     vi.mocked(restaurantOrderRepository.getOrderById).mockResolvedValue(order);
@@ -205,5 +214,71 @@ describe('restaurant order service', () => {
       problem: { status: 409 },
     });
     expect(restaurantOrderRepository.updateOrder).not.toHaveBeenCalled();
+  });
+});
+
+describe('public restaurant order service', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(tenantHasModule).mockResolvedValue(true);
+    vi.mocked(resolvePublicRestaurantOrganization).mockResolvedValue('org_1');
+    vi.mocked(restaurantOrderRepository.getOpenBusinessDay).mockResolvedValue(day);
+    vi.mocked(restaurantOrderRepository.findMenuItemsByIds).mockResolvedValue([
+      { id: 'menu_1', name: 'Kebabsub', priceCents: 6_000, currency: 'SEK', isAvailable: true },
+    ]);
+    vi.mocked(restaurantOrderRepository.createOrder).mockResolvedValue({ ...order, source: 'public' });
+  });
+
+  it('rejects delivery without an address (400)', async () => {
+    await expect(createPublicRestaurantOrder('fluffys.se', {
+      fulfillmentType: 'delivery',
+      customerName: 'Alex',
+      customerPhone: '+46700000000',
+      items: [{ menuItemId: 'menu_1', quantity: 1 }],
+    })).rejects.toMatchObject({ problem: { status: 400 } });
+    expect(restaurantOrderRepository.createOrder).not.toHaveBeenCalled();
+  });
+
+  it('rejects orders when no business day is open (409)', async () => {
+    vi.mocked(restaurantOrderRepository.getOpenBusinessDay).mockResolvedValue(null);
+    await expect(createPublicRestaurantOrder('fluffys.se', {
+      fulfillmentType: 'takeaway',
+      customerName: 'Alex',
+      customerPhone: '+46700000000',
+      items: [{ menuItemId: 'menu_1', quantity: 1 }],
+    })).rejects.toMatchObject({ problem: { status: 409 } });
+    expect(restaurantOrderRepository.createOrder).not.toHaveBeenCalled();
+  });
+
+  it('creates a public, unpaid order with server-snapshotted prices and a null actor', async () => {
+    const result = await createPublicRestaurantOrder('fluffys.se', {
+      fulfillmentType: 'takeaway',
+      customerName: 'Alex',
+      customerPhone: '+46700000000',
+      items: [{ menuItemId: 'menu_1', quantity: 2, unitPriceCents: 1 }],
+    });
+
+    expect(result).toMatchObject({ orderNumber: 1 });
+    expect(restaurantOrderRepository.createOrder).toHaveBeenCalledWith('org_1', 'day_1', null, expect.objectContaining({
+      source: 'public',
+      fulfillmentType: 'takeaway',
+      customerName: 'Alex',
+      customerPhone: '+46700000000',
+      paymentStatus: 'unpaid',
+      paymentMethod: null,
+    }));
+  });
+
+  it('drops unavailable items and fails when nothing orderable remains (400)', async () => {
+    vi.mocked(restaurantOrderRepository.findMenuItemsByIds).mockResolvedValue([
+      { id: 'menu_1', name: 'Kebabsub', priceCents: 6_000, currency: 'SEK', isAvailable: false },
+    ]);
+    await expect(createPublicRestaurantOrder('fluffys.se', {
+      fulfillmentType: 'takeaway',
+      customerName: 'Alex',
+      customerPhone: '+46700000000',
+      items: [{ menuItemId: 'menu_1', quantity: 1 }],
+    })).rejects.toMatchObject({ problem: { status: 400 } });
+    expect(restaurantOrderRepository.createOrder).not.toHaveBeenCalled();
   });
 });

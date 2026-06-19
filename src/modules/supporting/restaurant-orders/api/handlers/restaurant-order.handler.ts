@@ -6,6 +6,7 @@ import type { JWTPayload } from '@platform/auth/jwt';
 import { hasPermission } from '@modules/supporting/auth';
 import {
   closeBusinessDay,
+  createPublicRestaurantOrder,
   createRestaurantOrder,
   getCurrentBusinessDay,
   getRestaurantOrderSummary,
@@ -63,6 +64,21 @@ const ListOrdersQuerySchema = z.object({
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),
   activeOnly: z.enum(['true', 'false']).optional(),
+});
+
+const PublicOrderItemSchema = z.object({
+  menuItemId: z.string().uuid(),
+  quantity: z.number().int().min(1).max(50),
+  note: z.string().max(300).nullable().optional(),
+});
+
+const CreatePublicOrderSchema = z.object({
+  fulfillmentType: z.enum(['takeaway', 'delivery']),
+  customerName: z.string().min(1).max(120),
+  customerPhone: z.string().min(5).max(40),
+  deliveryAddress: z.string().max(400).nullable().optional(),
+  note: z.string().max(1000).nullable().optional(),
+  items: z.array(PublicOrderItemSchema).min(1).max(80),
 });
 
 const StartBusinessDaySchema = z.object({
@@ -186,4 +202,17 @@ export const handleGetRestaurantOrderSummary = createHandler(
     const orgId = requireOrg(auth);
     return ok({ summary: await getRestaurantOrderSummary(orgId) });
   },
+);
+
+// Public, unauthenticated customer order from the website. Org is resolved from the request host;
+// prices are snapshotted server-side; the order is created as source=public, unpaid.
+export const handleCreatePublicRestaurantOrder = createHandler(
+  {
+    tag: 'RestaurantOrders:PublicCreate',
+    auth: 'none',
+    rateLimit: { max: 20, windowMs: 60_000 },
+    body: CreatePublicOrderSchema,
+  },
+  async ({ req, body }) =>
+    created({ order: await createPublicRestaurantOrder(req.headers.get('host'), body!) }, '/api/v1/public-site/orders'),
 );

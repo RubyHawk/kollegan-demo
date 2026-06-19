@@ -35,6 +35,8 @@ function order(overrides: Partial<RestaurantOrderView> = {}): RestaurantOrderVie
     paymentMethod: 'card',
     fulfillmentType: 'counter',
     customerName: null,
+    customerPhone: null,
+    deliveryAddress: null,
     note: null,
     subtotalCents: 12_000,
     totalCents: 12_000,
@@ -65,7 +67,7 @@ function order(overrides: Partial<RestaurantOrderView> = {}): RestaurantOrderVie
 describe('restaurant order domain rules', () => {
   it('normalizes menu snapshots and calculates totals', () => {
     const menu = new Map([
-      ['menu_1', { id: 'menu_1', name: 'Kebabsub', priceCents: 6_000, currency: 'SEK' }],
+      ['menu_1', { id: 'menu_1', name: 'Kebabsub', priceCents: 6_000, currency: 'SEK', isAvailable: true }],
     ]);
 
     const items = normalizeOrderItems([

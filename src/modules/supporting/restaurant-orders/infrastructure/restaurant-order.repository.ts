@@ -55,6 +55,8 @@ type OrderRow = {
   paymentMethod: string | null;
   fulfillmentType: string;
   customerName: string | null;
+  customerPhone: string | null;
+  deliveryAddress: string | null;
   note: string | null;
   subtotalCents: number;
   totalCents: number;
@@ -114,6 +116,8 @@ function mapOrder(row: OrderRow): RestaurantOrderView {
     paymentMethod: row.paymentMethod as RestaurantPaymentMethod | null,
     fulfillmentType: row.fulfillmentType as RestaurantFulfillmentType,
     customerName: row.customerName,
+    customerPhone: row.customerPhone,
+    deliveryAddress: row.deliveryAddress,
     note: row.note,
     subtotalCents: row.subtotalCents,
     totalCents: row.totalCents,
@@ -223,17 +227,20 @@ export const restaurantOrderRepository = {
     if (ids.length === 0) return [];
     return prisma.restaurantMenuItem.findMany({
       where: { id: { in: ids }, organizationId, deletedAt: null },
-      select: { id: true, name: true, priceCents: true, currency: true },
+      select: { id: true, name: true, priceCents: true, currency: true, isAvailable: true },
     });
   },
 
   async createOrder(
     organizationId: string,
     businessDayId: string,
-    actorId: string,
+    actorId: string | null,
     input: {
+      source?: RestaurantOrderSource;
       fulfillmentType: RestaurantFulfillmentType;
       customerName: string | null;
+      customerPhone?: string | null;
+      deliveryAddress?: string | null;
       note: string | null;
       paymentStatus: RestaurantPaymentStatus;
       paymentMethod: RestaurantPaymentMethod | null;
@@ -256,12 +263,14 @@ export const restaurantOrderRepository = {
               organizationId,
               businessDayId,
               orderNumber,
-              source: 'portal',
+              source: input.source ?? 'portal',
               status: 'new',
               paymentStatus: input.paymentStatus,
               paymentMethod: input.paymentMethod,
               fulfillmentType: input.fulfillmentType,
               customerName: input.customerName,
+              customerPhone: input.customerPhone ?? null,
+              deliveryAddress: input.deliveryAddress ?? null,
               note: input.note,
               subtotalCents: input.totals.subtotalCents,
               totalCents: input.totals.totalCents,

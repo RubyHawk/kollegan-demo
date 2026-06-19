@@ -32,7 +32,7 @@ function clearPublicSiteCache() {
   publicSiteCache.clear();
 }
 
-async function resolvePublicRestaurantOrganization(host: string | null | undefined): Promise<string> {
+export async function resolvePublicRestaurantOrganization(host: string | null | undefined): Promise<string> {
   const tenant = await resolveTenantByHost(host);
   if (tenant?.kind === 'public') return tenant.organizationId;
 
