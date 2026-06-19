@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { OpeningHours } from '../_components/opening-hours';
+import { AvailabilityStatus } from '../_components/availability-status';
+import { WeeklyHours } from '../_components/opening-hours';
 import { SiteShell } from '../_components/site-shell';
 import { addressLine, getPublicSiteRoutePrefix, getSiteData, publicSiteHref, siteMetadata } from '../_lib/public-site-data';
 
@@ -50,12 +51,16 @@ export default async function PublicContactPage() {
       </section>
 
       <section className="fluffy-section fluffy-section--white">
-        <div className="fluffy-shell fluffy-grid fluffy-grid--contact">
-          <div className="fluffy-copy">
+        <div className="fluffy-shell fluffy-availability">
+          <div className="fluffy-availability__lead">
             <p className="fluffy-eyebrow">Öppet</p>
-            <h2 className="fluffy-page-title">Planera ditt besök.</h2>
+            <h2 className="fluffy-availability__title">Planera ditt besök</h2>
+            <AvailabilityStatus hours={site.openingHours} />
           </div>
-          <OpeningHours hours={site.openingHours} />
+          <div className="fluffy-availability__week">
+            <p className="fluffy-availability__week-title">Veckans tider</p>
+            <WeeklyHours hours={site.openingHours} />
+          </div>
         </div>
       </section>
     </SiteShell>
