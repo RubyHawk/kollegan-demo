@@ -4,47 +4,19 @@
   isolation: isolate;
 }
 
-.fluffy-collage::before {
-  content: "";
-  position: absolute;
-  inset: 22px 0 10px 8px;
-  z-index: -1;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 58% 48%, rgba(242, 140, 0, 0.2), transparent 30%),
-    radial-gradient(circle, rgba(82, 26, 147, 0.24), transparent 64%);
-  filter: blur(10px);
-}
-
 /* Base for all floating paper cutouts */
 .fluffy-cutout {
   position: absolute;
   overflow: hidden;
-  border: 1px solid rgba(9, 8, 7, 0.22);
-  border-radius: 6px;
+  border: 1px solid rgba(9, 8, 7, 0.10);
+  border-radius: 16px;
   background:
-    radial-gradient(circle at 13px 13px, rgba(9, 8, 7, 0.04) 0 1px, transparent 1.6px),
-    linear-gradient(180deg, #fffaf0, #f3e7d5);
+    radial-gradient(circle at 13px 13px, rgba(9, 8, 7, 0.035) 0 1px, transparent 1.6px),
+    linear-gradient(180deg, #fffdf8, #f6ecda);
   background-size: 22px 22px, auto;
-  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.22);
-  clip-path: polygon(0 9px, 9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px));
+  box-shadow: 0 12px 26px rgba(9, 8, 7, 0.13), 0 1px 0 rgba(255, 255, 255, 0.7) inset;
 }
 
-/* Tape strip above each cutout */
-.fluffy-cutout::before {
-  content: "";
-  position: absolute;
-  top: -10px;
-  left: 24%;
-  z-index: 3;
-  width: 92px;
-  height: 24px;
-  background:
-    linear-gradient(90deg, transparent 0 8px, rgba(255, 255, 255, 0.18) 8px 10px, transparent 10px 18px),
-    rgba(174, 147, 110, 0.38);
-  background-size: 18px 100%, auto;
-  transform: rotate(-3deg);
-}
 
 /* Tacokebab cutout — upper left */
 .fluffy-cutout--taco {
@@ -58,7 +30,7 @@
   height: auto;
   min-height: 220px;
   padding: 14px 12px 14px 14px;
-  transform: rotate(-3deg);
+  transform: rotate(-1.2deg);
 }
 
 /* Pick'n Mix cutout — upper right */
@@ -73,7 +45,7 @@
   height: auto;
   min-height: 220px;
   padding: 14px 12px 14px 14px;
-  transform: rotate(4deg);
+  transform: rotate(1.2deg);
 }
 
 /* Italian Duo sub cutout — level with the sign */
@@ -84,7 +56,7 @@
   width: 39%;
   min-height: 158px;
   padding: 16px 16px 8px;
-  transform: rotate(4deg);
+  transform: rotate(1.2deg);
 }
 
 .fluffy-cutout--sub img {
@@ -276,7 +248,7 @@
   border-radius: 7px;
   background: var(--fp-ink);
   color: var(--fp-white);
-  box-shadow: 0 12px 30px rgba(9, 8, 7, 0.28), 0 0 0 3px rgba(242, 140, 0, 0.18) inset;
+  box-shadow: 0 10px 24px rgba(9, 8, 7, 0.22);
   font-family: var(--fluffy-display-font);
   font-size: clamp(2rem, 3.3vw, 3.2rem);
   font-weight: 950;
@@ -307,16 +279,15 @@
   width: 59%;
   min-height: 112px;
   overflow: hidden;
-  border: 1px solid rgba(9, 8, 7, 0.25);
-  border-radius: 6px;
+  border: 1px solid rgba(9, 8, 7, 0.10);
+  border-radius: 16px;
   background:
-    radial-gradient(circle at 13px 13px, rgba(9, 8, 7, 0.04) 0 1px, transparent 1.6px),
-    linear-gradient(180deg, #fffaf0, #f3e7d5);
+    radial-gradient(circle at 13px 13px, rgba(9, 8, 7, 0.035) 0 1px, transparent 1.6px),
+    linear-gradient(180deg, #fffdf8, #f6ecda);
   background-size: 22px 22px, auto;
-  box-shadow: var(--fp-shadow-card);
-  clip-path: polygon(0 9px, 9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px));
+  box-shadow: 0 12px 26px rgba(9, 8, 7, 0.13), 0 1px 0 rgba(255, 255, 255, 0.7) inset;
   padding: 16px 20px;
-  transform: rotate(-2deg);
+  transform: rotate(-1deg);
 }
 
 .fluffy-gluten-ticket > span {
@@ -392,10 +363,6 @@
     margin-top: 8px;
     display: grid;
     gap: 16px;
-  }
-
-  .fluffy-collage::before {
-    display: none;
   }
 
   .fluffy-cutout,
