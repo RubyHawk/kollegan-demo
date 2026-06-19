@@ -33,8 +33,14 @@ export async function generateMetadata(): Promise<Metadata> {
   if (host === 'portal.fluffys.se') {
     return {
       title: "Fluffy's Portal",
-      description: "Fluffy's arbetsyta för bokningar, personal, närvaro och webbplats.",
+      description: "Fluffy's arbetsyta för kassa, bokningar, personal, närvaro och webbplats.",
       icons: iconSet(FLUFFYS_MARK_PATH),
+      manifest: '/manifest.webmanifest',
+      appleWebApp: {
+        capable: true,
+        title: "Fluffy's Portal",
+        statusBarStyle: 'default',
+      },
     };
   }
 
