@@ -1,7 +1,9 @@
 import Link from 'next/link';
-import { ArrowRightIcon, PhoneIcon, ShoppingBagIcon, TruckIcon } from 'lucide-react';
+import { ArrowRightIcon, PhoneIcon } from 'lucide-react';
 import { SiteShell } from '../_components/site-shell';
+import { OrderCart, type OrderMenuCategory } from '../_components/order-cart';
 import { getPublicSiteRoutePrefix, getSiteData, publicSiteHref, siteMetadata } from '../_lib/public-site-data';
+import { isOrderableMenuItem, parseMenuVariants } from '@shared/lib/menu/menu-variants';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,24 +11,41 @@ export async function generateMetadata() {
   return siteMetadata('Beställ');
 }
 
-// External delivery partners. Add a { name, url } entry to switch a provider on; until a URL
-// exists the delivery card falls back to call-to-order. Kept here until the portal exposes a
-// configurable field for these links (see ordering roadmap).
-const DELIVERY_PROVIDERS: Array<{ name: string; url: string }> = [
-  // { name: 'Foodora', url: 'https://www.foodora.se/restaurant/...' },
-  // { name: 'Wolt', url: 'https://wolt.com/sv/.../fluffys' },
-  // { name: 'Uber Eats', url: 'https://www.ubereats.com/se/store/...' },
-];
-
 function telHref(phone: string | null) {
   const normalized = phone?.replace(/[^\d+]/g, '');
   return normalized ? `tel:${normalized}` : null;
+}
+
+// Build the orderable menu from live data: only available items that resolve to at least one priced
+// variant (parsed from the menu row's tags/priceCents). The browser never supplies prices — the
+// order endpoint re-derives them from the same menu row.
+function buildOrderMenu(categories: Awaited<ReturnType<typeof getSiteData>>['site']['categories']): OrderMenuCategory[] {
+  return categories
+    .map((category) => ({
+      id: category.id,
+      name: category.name,
+      items: category.items
+        .filter((item) => isOrderableMenuItem({ tags: item.tags, priceCents: item.priceCents, isAvailable: item.isAvailable }))
+        .map((item) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          currency: item.currency,
+          variants: parseMenuVariants(item.tags, item.priceCents),
+        })),
+    }))
+    .filter((category) => category.items.length > 0);
 }
 
 export default async function PublicOrderPage() {
   const { site, isFallback } = await getSiteData();
   const routePrefix = await getPublicSiteRoutePrefix();
   const callHref = telHref(site.settings.phone);
+
+  // Online ordering needs real, uuid-keyed menu items; the demo/outage fallback can't be ordered, so
+  // we fall back to call-to-order there.
+  const orderMenu = isFallback ? [] : buildOrderMenu(site.categories);
+  const canOrderOnline = orderMenu.length > 0;
 
   return (
     <SiteShell site={site} isFallback={isFallback} routePrefix={routePrefix}>
@@ -35,60 +54,37 @@ export default async function PublicOrderPage() {
           <p className="fluffy-eyebrow">Beställ</p>
           <h1 className="fluffy-page-title">Avhämtning &amp; leverans</h1>
           <p>
-            Ring in din beställning för avhämtning, eller få maten levererad hem. Vill du boka bord
-            istället? Det gör du under{' '}
+            {canOrderOnline
+              ? 'Bygg din beställning, välj avhämtning eller hemleverans och skicka — du betalar när maten kommer.'
+              : 'Ring in din beställning för avhämtning eller leverans.'}{' '}
+            Vill du boka bord istället? Det gör du under{' '}
             <Link className="fluffy-link" href={publicSiteHref(routePrefix, '/boka')}>Boka bord</Link>.
           </p>
         </div>
       </section>
 
       <section className="fluffy-section fluffy-section--white">
-        <div className="fluffy-shell fluffy-order-grid">
-          <article className="fluffy-card fluffy-order-card fluffy-rise">
-            <span className="fluffy-order-icon" aria-hidden="true"><ShoppingBagIcon /></span>
-            <h2>Avhämtning</h2>
-            <p>Ring och beställ — vi har maten klar för avhämtning när du kommer.</p>
-            {callHref ? (
-              <a href={callHref} className="fluffy-button fluffy-button--primary">
-                <PhoneIcon aria-hidden="true" />
-                Ring &amp; beställ
-              </a>
-            ) : (
-              <Link href={publicSiteHref(routePrefix, '/kontakt')} className="fluffy-button fluffy-button--primary">
-                Kontaktuppgifter
-                <ArrowRightIcon aria-hidden="true" />
-              </Link>
-            )}
-            {site.settings.phone ? <p className="fluffy-muted">{site.settings.phone}</p> : null}
-          </article>
-
-          <article className="fluffy-card fluffy-order-card fluffy-rise fluffy-delay-1">
-            <span className="fluffy-order-icon" aria-hidden="true"><TruckIcon /></span>
-            <h2>Leverans</h2>
-            {DELIVERY_PROVIDERS.length > 0 ? (
-              <>
-                <p>Beställ hemleverans via våra partners.</p>
-                <div className="fluffy-order-providers">
-                  {DELIVERY_PROVIDERS.map((provider) => (
-                    <a key={provider.name} href={provider.url} target="_blank" rel="noreferrer" className="fluffy-button">
-                      {provider.name}
-                      <ArrowRightIcon aria-hidden="true" />
-                    </a>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <>
-                <p>Hemleverans via Foodora, Wolt och Uber Eats läggs till inom kort. Vill du ha leverans nu — ring oss så löser vi det.</p>
-                {callHref ? (
-                  <a href={callHref} className="fluffy-button">
-                    <PhoneIcon aria-hidden="true" />
-                    Ring oss
-                  </a>
-                ) : null}
-              </>
-            )}
-          </article>
+        <div className="fluffy-shell">
+          {canOrderOnline ? (
+            <OrderCart menu={orderMenu} phone={site.settings.phone} />
+          ) : (
+            <article className="fluffy-card fluffy-order-card fluffy-rise">
+              <h2>Ring &amp; beställ</h2>
+              <p>Just nu tar vi beställningar för avhämtning och leverans via telefon. Ring oss så fixar vi det.</p>
+              {callHref ? (
+                <a href={callHref} className="fluffy-button fluffy-button--primary">
+                  <PhoneIcon aria-hidden="true" />
+                  Ring &amp; beställ
+                </a>
+              ) : (
+                <Link href={publicSiteHref(routePrefix, '/kontakt')} className="fluffy-button fluffy-button--primary">
+                  Kontaktuppgifter
+                  <ArrowRightIcon aria-hidden="true" />
+                </Link>
+              )}
+              {site.settings.phone ? <p className="fluffy-muted">{site.settings.phone}</p> : null}
+            </article>
+          )}
         </div>
       </section>
     </SiteShell>

@@ -93,7 +93,7 @@ describe('restaurant order service', () => {
     vi.mocked(resolvePublicRestaurantOrganization).mockResolvedValue('org_1');
     vi.mocked(restaurantOrderRepository.getOpenBusinessDay).mockResolvedValue(day);
     vi.mocked(restaurantOrderRepository.findMenuItemsByIds).mockResolvedValue([
-      { id: 'menu_1', name: 'Kebabsub', priceCents: 6_000, currency: 'SEK', isAvailable: true },
+      { id: 'menu_1', name: 'Kebabsub', priceCents: 6_000, currency: 'SEK', isAvailable: true, tags: [] },
     ]);
     vi.mocked(restaurantOrderRepository.createOrder).mockResolvedValue(order);
     vi.mocked(restaurantOrderRepository.getOrderById).mockResolvedValue(order);
@@ -224,7 +224,7 @@ describe('public restaurant order service', () => {
     vi.mocked(resolvePublicRestaurantOrganization).mockResolvedValue('org_1');
     vi.mocked(restaurantOrderRepository.getOpenBusinessDay).mockResolvedValue(day);
     vi.mocked(restaurantOrderRepository.findMenuItemsByIds).mockResolvedValue([
-      { id: 'menu_1', name: 'Kebabsub', priceCents: 6_000, currency: 'SEK', isAvailable: true },
+      { id: 'menu_1', name: 'Kebabsub', priceCents: 6_000, currency: 'SEK', isAvailable: true, tags: [] },
     ]);
     vi.mocked(restaurantOrderRepository.createOrder).mockResolvedValue({ ...order, source: 'public' });
   });
@@ -271,13 +271,48 @@ describe('public restaurant order service', () => {
 
   it('drops unavailable items and fails when nothing orderable remains (400)', async () => {
     vi.mocked(restaurantOrderRepository.findMenuItemsByIds).mockResolvedValue([
-      { id: 'menu_1', name: 'Kebabsub', priceCents: 6_000, currency: 'SEK', isAvailable: false },
+      { id: 'menu_1', name: 'Kebabsub', priceCents: 6_000, currency: 'SEK', isAvailable: false, tags: [] },
     ]);
     await expect(createPublicRestaurantOrder('fluffys.se', {
       fulfillmentType: 'takeaway',
       customerName: 'Alex',
       customerPhone: '+46700000000',
       items: [{ menuItemId: 'menu_1', quantity: 1 }],
+    })).rejects.toMatchObject({ problem: { status: 400 } });
+    expect(restaurantOrderRepository.createOrder).not.toHaveBeenCalled();
+  });
+
+  it('snapshots the chosen size price from the menu and ignores any client price', async () => {
+    vi.mocked(restaurantOrderRepository.findMenuItemsByIds).mockResolvedValue([
+      { id: 'menu_1', name: '1. Det enkla', priceCents: null, currency: 'SEK', isAvailable: true, tags: ['S 69', 'M 119', 'L 199'] },
+    ]);
+
+    await createPublicRestaurantOrder('fluffys.se', {
+      fulfillmentType: 'takeaway',
+      customerName: 'Alex',
+      customerPhone: '+46700000000',
+      items: [{ menuItemId: 'menu_1', quantity: 2, variantLabel: 'M', unitPriceCents: 1 }],
+    });
+
+    const input = vi.mocked(restaurantOrderRepository.createOrder).mock.calls[0]![3];
+    expect(input.items).toHaveLength(1);
+    expect(input.items[0]).toMatchObject({
+      name: '1. Det enkla (M)',
+      quantity: 2,
+      unitPriceCents: 11_900,
+      lineTotalCents: 23_800,
+    });
+  });
+
+  it('rejects an order whose only line names a size that does not exist (400)', async () => {
+    vi.mocked(restaurantOrderRepository.findMenuItemsByIds).mockResolvedValue([
+      { id: 'menu_1', name: '1. Det enkla', priceCents: null, currency: 'SEK', isAvailable: true, tags: ['S 69', 'M 119'] },
+    ]);
+    await expect(createPublicRestaurantOrder('fluffys.se', {
+      fulfillmentType: 'takeaway',
+      customerName: 'Alex',
+      customerPhone: '+46700000000',
+      items: [{ menuItemId: 'menu_1', quantity: 1, variantLabel: 'XXL' }],
     })).rejects.toMatchObject({ problem: { status: 400 } });
     expect(restaurantOrderRepository.createOrder).not.toHaveBeenCalled();
   });

@@ -194,6 +194,7 @@ export type PublicOrderFulfillmentType = 'takeaway' | 'delivery';
 export interface PublicOrderItemPayload {
   menuItemId: string;
   quantity: number;
+  variantLabel?: string | null;
   note?: string | null;
 }
 

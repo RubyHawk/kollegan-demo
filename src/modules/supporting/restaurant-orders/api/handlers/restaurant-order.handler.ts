@@ -69,6 +69,7 @@ const ListOrdersQuerySchema = z.object({
 const PublicOrderItemSchema = z.object({
   menuItemId: z.string().uuid(),
   quantity: z.number().int().min(1).max(50),
+  variantLabel: z.string().max(40).nullable().optional(),
   note: z.string().max(300).nullable().optional(),
 });
 

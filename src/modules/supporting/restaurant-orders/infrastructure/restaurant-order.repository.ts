@@ -227,7 +227,7 @@ export const restaurantOrderRepository = {
     if (ids.length === 0) return [];
     return prisma.restaurantMenuItem.findMany({
       where: { id: { in: ids }, organizationId, deletedAt: null },
-      select: { id: true, name: true, priceCents: true, currency: true, isAvailable: true },
+      select: { id: true, name: true, priceCents: true, currency: true, isAvailable: true, tags: true },
     });
   },
 

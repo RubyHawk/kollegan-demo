@@ -5,6 +5,7 @@ import {
   assertOrderStatusTransition,
   buildOrderSummary,
   calculateOrderTotals,
+  buildPublicOrderItems,
   normalizeOrderItems,
   type CloseBusinessDayInput,
   type CreatePublicRestaurantOrderInput,
@@ -208,8 +209,8 @@ export async function createPublicRestaurantOrder(
   if (!businessDay) throw Errors.conflict('Onlinebeställningar är stängda just nu. Ring oss så hjälper vi dig.');
 
   const menuItems = await restaurantOrderRepository.findMenuItemsByIds(organizationId, collectMenuItemIds(input));
-  const menuMap = new Map(menuItems.filter((item) => item.isAvailable).map((item) => [item.id, item]));
-  const items = normalizeOrderItems(input.items, menuMap);
+  const menuMap = new Map(menuItems.map((item) => [item.id, item]));
+  const items = buildPublicOrderItems(input.items, menuMap);
   if (items.length === 0) throw Errors.validation('Beställningen behöver minst en tillgänglig rad.');
 
   const currency = menuItems.find((item) => item.currency)?.currency ?? 'SEK';
