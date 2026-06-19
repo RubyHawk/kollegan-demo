@@ -1,4 +1,4 @@
-﻿import type { Offer } from '../domain/offer.entity';
+import type { Offer } from '../domain/offer.entity';
 import { escapeHtml, formatOfferLineItemQuantityHtml } from './document-formatting';
 import { buildStructuredLineItems } from './document-line-items';
 

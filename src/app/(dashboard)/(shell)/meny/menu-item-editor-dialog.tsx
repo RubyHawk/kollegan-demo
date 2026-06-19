@@ -18,6 +18,8 @@ import type {
   CreateIngredientPayload,
   IngredientCatalog,
   MenuItemIngredientInput,
+  MenuItemModifierGroupInput,
+  MenuItemVariantInput,
   RestaurantMenuItem,
 } from '@shared/lib/api/restaurant.api';
 import { MENU_BADGES, isPriceTag, parsePriceCents, parseVariantTag, priceToInput } from './menu-utils';
@@ -37,6 +39,9 @@ export interface MenuItemDraft {
   tags: string[];
   description: string | null;
   ingredients: MenuItemIngredientInput[];
+  variants: MenuItemVariantInput[];
+  modifierGroups: MenuItemModifierGroupInput[];
+  kitchenStation: string | null;
 }
 
 type PriceMode = 'single' | 'sizes';
@@ -77,7 +82,51 @@ function makeKey() {
 // are kept aside and preserved on save (see menu-utils + public menu parser).
 function toSizeRows(item?: RestaurantMenuItem): SizeRow[] {
   if (!item) return [];
+  if ((item.variants ?? []).length > 0) {
+    return (item.variants ?? []).map((variant) => ({
+      key: makeKey(),
+      label: variant.name,
+      price: priceToInput(variant.priceCents),
+    }));
+  }
   return item.tags.filter(isPriceTag).map((tag) => ({ key: makeKey(), ...parseVariantTag(tag) }));
+}
+
+function modifierGroupsToText(item?: RestaurantMenuItem): string {
+  const groups = item?.modifierGroups ?? [];
+  if (!groups.length) return '';
+  return groups.map((group) => {
+    const options = group.options.map((option) => (
+      option.priceDeltaCents > 0 ? `${option.name} +${priceToInput(option.priceDeltaCents)}` : option.name
+    ));
+    return `${group.name}: ${options.join(', ')}`;
+  }).join('\n');
+}
+
+function parseModifierGroupsText(value: string): MenuItemModifierGroupInput[] {
+  const groups: MenuItemModifierGroupInput[] = [];
+  value.split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .forEach((line, groupIndex) => {
+      const [rawName, rawOptions = ''] = line.split(':');
+      const name = rawName.trim();
+      const options = rawOptions.split(',').flatMap((option, optionIndex) => {
+        const match = option.trim().match(/^(.*?)(?:\s*\+\s*([\d,.]+))?$/);
+        const optionName = match?.[1]?.trim() ?? '';
+        if (!optionName) return [];
+        return [{
+          name: optionName,
+          priceDeltaCents: match?.[2] ? parsePriceCents(match[2]) ?? 0 : 0,
+          isAvailable: true,
+          sortOrder: optionIndex,
+        }];
+      });
+      if (name && options.length > 0) {
+        groups.push({ name, minSelected: 0, maxSelected: 1, required: false, sortOrder: groupIndex, options });
+      }
+    });
+  return groups;
 }
 
 function toDraftRows(item?: RestaurantMenuItem): DraftIngredient[] {
@@ -123,6 +172,8 @@ function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit,
   // kept separate from price variants so saving never drops a price or a label.
   const [badges, setBadges] = useState<string[]>(() => (item?.tags ?? []).filter((tag) => !isPriceTag(tag)));
   const [badgeInput, setBadgeInput] = useState('');
+  const [kitchenStation, setKitchenStation] = useState(item?.kitchenStation ?? '');
+  const [modifierGroupsText, setModifierGroupsText] = useState(() => modifierGroupsToText(item));
   const [description, setDescription] = useState(item?.description ?? '');
   const [rows, setRows] = useState<DraftIngredient[]>(() => toDraftRows(item));
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -278,15 +329,26 @@ function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit,
 
     let priceCents: number | null = null;
     let tags: string[] = [...badges];
+    let variants: MenuItemVariantInput[] = [];
     if (priceMode === 'single') {
       priceCents = parsePriceCents(singlePrice);
     } else {
-      const sizeTags = sizes
+      const validSizes = sizes
         .filter((size) => size.label.trim())
+        .map((size, index) => ({ ...size, priceCents: parsePriceCents(size.price), index }))
+        .filter((size): size is SizeRow & { priceCents: number; index: number } => size.priceCents !== null);
+      const sizeTags = validSizes
         .map((size) => {
           const price = size.price.trim();
           return price ? `${size.label.trim()} ${price}` : size.label.trim();
         });
+      variants = validSizes.map((size, index) => ({
+        name: size.label.trim(),
+        priceCents: size.priceCents,
+        isDefault: index === 0,
+        isAvailable: true,
+        sortOrder: size.index,
+      }));
       tags = [...sizeTags, ...badges];
     }
 
@@ -304,7 +366,16 @@ function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit,
     setBusy(true);
     setError('');
     try {
-      await onSubmit({ name: trimmedName, priceCents, tags, description: description.trim() || null, ingredients });
+      await onSubmit({
+        name: trimmedName,
+        priceCents,
+        tags,
+        description: description.trim() || null,
+        ingredients,
+        variants,
+        modifierGroups: parseModifierGroupsText(modifierGroupsText),
+        kitchenStation: kitchenStation.trim() || null,
+      });
       onClose();
     } catch (err) {
       setError((err as Error).message);
@@ -435,6 +506,29 @@ function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit,
               </div>
             </div>
           )}
+        </section>
+
+        <section className="grid gap-3 md:grid-cols-[220px_1fr]">
+          <label className="space-y-1.5">
+            <span className="text-sm font-semibold text-[var(--ui-text)]">Köksstation</span>
+            <input
+              value={kitchenStation}
+              onChange={(e) => setKitchenStation(e.target.value)}
+              placeholder="T.ex. Pizza, Kallskänk"
+              maxLength={80}
+              className="w-full rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2.5 text-sm text-[var(--ui-text)] placeholder:text-[var(--ui-text-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
+            />
+          </label>
+          <label className="space-y-1.5">
+            <span className="text-sm font-semibold text-[var(--ui-text)]">Tillval för kassan</span>
+            <textarea
+              value={modifierGroupsText}
+              onChange={(e) => setModifierGroupsText(e.target.value)}
+              placeholder="Sås: Vitlök, Stark +10&#10;Extra: Ost +15, Jalapeño +10"
+              rows={3}
+              className="w-full resize-none rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2 text-sm text-[var(--ui-text)] placeholder:text-[var(--ui-text-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
+            />
+          </label>
         </section>
 
         {/* ── Märkningar (badges) ── */}

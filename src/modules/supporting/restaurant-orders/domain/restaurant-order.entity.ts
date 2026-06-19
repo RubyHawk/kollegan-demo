@@ -1,14 +1,51 @@
 export const RESTAURANT_ORDER_STATUSES = ['new', 'preparing', 'ready', 'completed', 'cancelled'] as const;
 export const RESTAURANT_PAYMENT_STATUSES = ['unpaid', 'paid', 'refunded'] as const;
 export const RESTAURANT_PAYMENT_METHODS = ['cash', 'card', 'swish', 'other'] as const;
-export const RESTAURANT_FULFILLMENT_TYPES = ['takeaway', 'dine_in', 'counter'] as const;
+export const RESTAURANT_FULFILLMENT_TYPES = ['takeaway', 'dine_in', 'counter', 'booking_linked'] as const;
+export const RESTAURANT_KOT_STATUSES = ['not_sent', 'sent', 'printed'] as const;
 
 export type RestaurantOrderStatus = (typeof RESTAURANT_ORDER_STATUSES)[number];
 export type RestaurantPaymentStatus = (typeof RESTAURANT_PAYMENT_STATUSES)[number];
 export type RestaurantPaymentMethod = (typeof RESTAURANT_PAYMENT_METHODS)[number];
 export type RestaurantFulfillmentType = (typeof RESTAURANT_FULFILLMENT_TYPES)[number];
+export type RestaurantKotStatus = (typeof RESTAURANT_KOT_STATUSES)[number];
 export type RestaurantOrderSource = 'portal' | 'public';
 export type RestaurantBusinessDayStatus = 'open' | 'closed';
+
+export interface RestaurantOrderModifierSelection {
+  groupId: string | null;
+  groupName: string;
+  optionId: string | null;
+  optionName: string;
+  priceDeltaCents: number;
+}
+
+export interface RestaurantMenuVariantSnapshot {
+  id: string | null;
+  name: string;
+  priceCents: number;
+  isDefault: boolean;
+  isAvailable: boolean;
+  sortOrder: number;
+}
+
+export interface RestaurantMenuModifierOptionSnapshot {
+  id: string | null;
+  name: string;
+  priceDeltaCents: number;
+  isAvailable: boolean;
+  sortOrder: number;
+}
+
+export interface RestaurantMenuModifierGroupSnapshot {
+  id: string | null;
+  name: string;
+  minSelected: number;
+  maxSelected: number;
+  required: boolean;
+  sortOrder: number;
+  options: RestaurantMenuModifierOptionSnapshot[];
+}
 
 export interface RestaurantBusinessDayView {
   id: string;
@@ -30,6 +67,10 @@ export interface RestaurantOrderItemView {
   menuItemId: string | null;
   name: string;
   quantity: number;
+  variantName?: string | null;
+  variantPriceCents?: number | null;
+  selectedModifiers?: RestaurantOrderModifierSelection[];
+  modifierTotalCents?: number;
   unitPriceCents: number;
   lineTotalCents: number;
   note: string | null;
@@ -47,10 +88,20 @@ export interface RestaurantOrderView {
   paymentMethod: RestaurantPaymentMethod | null;
   fulfillmentType: RestaurantFulfillmentType;
   customerName: string | null;
+  tableLabel?: string | null;
+  bookingReference?: string | null;
   note: string | null;
   subtotalCents: number;
+  discountCents?: number;
+  taxCents?: number;
+  taxRateBps?: number;
   totalCents: number;
   currency: string;
+  isHeld?: boolean;
+  kotStatus?: RestaurantKotStatus;
+  sentToKitchenAt?: string | null;
+  printedAt?: string | null;
+  printCount?: number;
   paidAt: string | null;
   completedAt: string | null;
   cancelledAt: string | null;
@@ -65,6 +116,10 @@ export interface CreateRestaurantOrderItemInput {
   menuItemId?: string | null;
   name?: string | null;
   quantity: number;
+  variantName?: string | null;
+  variantPriceCents?: number | null;
+  selectedModifiers?: RestaurantOrderModifierSelection[];
+  modifierTotalCents?: number | null;
   unitPriceCents?: number | null;
   note?: string | null;
 }
@@ -72,7 +127,14 @@ export interface CreateRestaurantOrderItemInput {
 export interface CreateRestaurantOrderInput {
   fulfillmentType?: RestaurantFulfillmentType;
   customerName?: string | null;
+  tableLabel?: string | null;
+  bookingReference?: string | null;
   note?: string | null;
+  discountCents?: number | null;
+  taxRateBps?: number | null;
+  isHeld?: boolean;
+  sendToKitchen?: boolean;
+  printReceipt?: boolean;
   paymentStatus?: RestaurantPaymentStatus;
   paymentMethod?: RestaurantPaymentMethod | null;
   items: CreateRestaurantOrderItemInput[];
@@ -82,8 +144,14 @@ export interface UpdateRestaurantOrderInput {
   status?: RestaurantOrderStatus;
   paymentStatus?: RestaurantPaymentStatus;
   paymentMethod?: RestaurantPaymentMethod | null;
+  fulfillmentType?: RestaurantFulfillmentType;
   customerName?: string | null;
+  tableLabel?: string | null;
+  bookingReference?: string | null;
   note?: string | null;
+  isHeld?: boolean;
+  kotStatus?: RestaurantKotStatus;
+  printReceipt?: boolean;
 }
 
 export interface ListRestaurantOrdersInput {
@@ -108,12 +176,18 @@ export interface RestaurantMenuItemSnapshot {
   name: string;
   priceCents: number | null;
   currency: string;
+  variants?: RestaurantMenuVariantSnapshot[];
+  modifierGroups?: RestaurantMenuModifierGroupSnapshot[];
 }
 
 export interface NormalizedOrderItem {
   menuItemId: string | null;
   name: string;
   quantity: number;
+  variantName: string | null;
+  variantPriceCents: number | null;
+  selectedModifiers: RestaurantOrderModifierSelection[];
+  modifierTotalCents: number;
   unitPriceCents: number;
   lineTotalCents: number;
   note: string | null;
@@ -122,6 +196,9 @@ export interface NormalizedOrderItem {
 
 export interface RestaurantOrderTotals {
   subtotalCents: number;
+  discountCents: number;
+  taxCents: number;
+  taxRateBps: number;
   totalCents: number;
   currency: string;
 }
@@ -172,20 +249,103 @@ export function assertOrderStatusTransition(
   }
 }
 
+function cleanText(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+function priceInt(value: number | null | undefined): number {
+  return Number.isFinite(value) ? Math.max(0, Math.floor(Number(value))) : 0;
+}
+
+function findSelectedVariant(
+  item: CreateRestaurantOrderItemInput,
+  menuItem: RestaurantMenuItemSnapshot | null,
+): { name: string | null; priceCents: number | null } {
+  if (!menuItem) {
+    return {
+      name: cleanText(item.variantName),
+      priceCents: item.variantPriceCents === null || item.variantPriceCents === undefined
+        ? null
+        : priceInt(item.variantPriceCents),
+    };
+  }
+
+  const variants = menuItem.variants ?? [];
+  if (variants.length === 0) return { name: null, priceCents: null };
+  const selectedName = cleanText(item.variantName);
+  const variant = selectedName
+    ? variants.find((candidate) => candidate.isAvailable && candidate.name === selectedName)
+    : variants.find((candidate) => candidate.isAvailable && candidate.isDefault)
+      ?? variants.find((candidate) => candidate.isAvailable);
+
+  return variant ? { name: variant.name, priceCents: variant.priceCents } : { name: null, priceCents: null };
+}
+
+function normalizeModifierSelections(
+  input: RestaurantOrderModifierSelection[] | undefined,
+  menuItem: RestaurantMenuItemSnapshot | null,
+): RestaurantOrderModifierSelection[] {
+  if (!input?.length) return [];
+  if (!menuItem) {
+    return input.map((selection) => ({
+      groupId: cleanText(selection.groupId),
+      groupName: cleanText(selection.groupName) ?? 'Tillval',
+      optionId: cleanText(selection.optionId),
+      optionName: cleanText(selection.optionName) ?? 'Tillval',
+      priceDeltaCents: priceInt(selection.priceDeltaCents),
+    })).filter((selection) => selection.optionName);
+  }
+
+  const selected: RestaurantOrderModifierSelection[] = [];
+  for (const group of menuItem.modifierGroups ?? []) {
+    const requested = input.filter((selection) => (
+      (selection.groupId && selection.groupId === group.id)
+      || selection.groupName === group.name
+    ));
+    const groupSelections: RestaurantOrderModifierSelection[] = [];
+    for (const selection of requested) {
+      const option = group.options.find((candidate) => (
+        candidate.isAvailable
+        && ((selection.optionId && selection.optionId === candidate.id) || selection.optionName === candidate.name)
+      ));
+      if (!option) continue;
+      groupSelections.push({
+        groupId: group.id,
+        groupName: group.name,
+        optionId: option.id,
+        optionName: option.name,
+        priceDeltaCents: option.priceDeltaCents,
+      });
+    }
+    selected.push(...groupSelections.slice(0, group.maxSelected));
+  }
+  return selected;
+}
+
 export function normalizeOrderItems(
   input: CreateRestaurantOrderItemInput[],
   menuItems: Map<string, RestaurantMenuItemSnapshot>,
 ): NormalizedOrderItem[] {
   return input.map((item, index) => {
-    const menuItem = item.menuItemId ? menuItems.get(item.menuItemId) : null;
+    const menuItem = item.menuItemId ? menuItems.get(item.menuItemId) ?? null : null;
     const name = (menuItem?.name ?? item.name ?? '').trim();
     const quantity = Math.max(1, Math.floor(item.quantity));
-    const unitPriceCents = Math.max(0, Math.floor(menuItem?.priceCents ?? item.unitPriceCents ?? 0));
+    const variant = findSelectedVariant(item, menuItem);
+    const selectedModifiers = normalizeModifierSelections(item.selectedModifiers, menuItem);
+    const modifierTotalCents = selectedModifiers.reduce((sum, selection) => sum + selection.priceDeltaCents, 0)
+      || (menuItem ? 0 : priceInt(item.modifierTotalCents));
+    const basePriceCents = variant.priceCents ?? menuItem?.priceCents ?? item.unitPriceCents ?? 0;
+    const unitPriceCents = priceInt(basePriceCents) + modifierTotalCents;
 
     return {
       menuItemId: menuItem?.id ?? item.menuItemId ?? null,
       name,
       quantity,
+      variantName: variant.name,
+      variantPriceCents: variant.priceCents,
+      selectedModifiers,
+      modifierTotalCents,
       unitPriceCents,
       lineTotalCents: quantity * unitPriceCents,
       note: item.note?.trim() || null,
@@ -194,11 +354,22 @@ export function normalizeOrderItems(
   }).filter((item) => item.name);
 }
 
-export function calculateOrderTotals(items: NormalizedOrderItem[], currency = 'SEK'): RestaurantOrderTotals {
+export function calculateOrderTotals(
+  items: NormalizedOrderItem[],
+  currency = 'SEK',
+  input: { discountCents?: number | null; taxRateBps?: number | null } = {},
+): RestaurantOrderTotals {
   const subtotalCents = items.reduce((sum, item) => sum + item.lineTotalCents, 0);
+  const discountCents = Math.min(subtotalCents, priceInt(input.discountCents));
+  const taxableCents = Math.max(0, subtotalCents - discountCents);
+  const taxRateBps = Number.isFinite(input.taxRateBps) ? Math.max(0, Math.floor(Number(input.taxRateBps))) : 1200;
+  const taxCents = taxRateBps > 0 ? Math.round((taxableCents * taxRateBps) / (10_000 + taxRateBps)) : 0;
   return {
     subtotalCents,
-    totalCents: subtotalCents,
+    discountCents,
+    taxCents,
+    taxRateBps,
+    totalCents: taxableCents,
     currency,
   };
 }

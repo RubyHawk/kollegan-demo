@@ -6,6 +6,8 @@ export type {
   RestaurantBusinessDayStatus,
   RestaurantBusinessDayView,
   RestaurantFulfillmentType,
+  RestaurantKotStatus,
+  RestaurantOrderModifierSelection,
   RestaurantOrderItemView,
   RestaurantOrderSource,
   RestaurantOrderStatus,
@@ -18,6 +20,7 @@ export type {
   UpdateRestaurantOrderInput,
 } from './domain/restaurant-order.entity';
 export {
+  RESTAURANT_KOT_STATUSES,
   RESTAURANT_FULFILLMENT_TYPES,
   RESTAURANT_ORDER_STATUSES,
   RESTAURANT_PAYMENT_METHODS,

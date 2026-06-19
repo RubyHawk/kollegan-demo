@@ -7,8 +7,17 @@ interface ApiEnvelope<T> {
 export type RestaurantOrderStatus = 'new' | 'preparing' | 'ready' | 'completed' | 'cancelled';
 export type RestaurantPaymentStatus = 'unpaid' | 'paid' | 'refunded';
 export type RestaurantPaymentMethod = 'cash' | 'card' | 'swish' | 'other';
-export type RestaurantFulfillmentType = 'takeaway' | 'dine_in' | 'counter';
+export type RestaurantFulfillmentType = 'takeaway' | 'dine_in' | 'counter' | 'booking_linked';
+export type RestaurantKotStatus = 'not_sent' | 'sent' | 'printed';
 export type RestaurantBusinessDayStatus = 'open' | 'closed';
+
+export interface RestaurantOrderModifierSelection {
+  groupId: string | null;
+  groupName: string;
+  optionId: string | null;
+  optionName: string;
+  priceDeltaCents: number;
+}
 
 export interface RestaurantBusinessDay {
   id: string;
@@ -30,6 +39,10 @@ export interface RestaurantOrderItem {
   menuItemId: string | null;
   name: string;
   quantity: number;
+  variantName?: string | null;
+  variantPriceCents?: number | null;
+  selectedModifiers?: RestaurantOrderModifierSelection[];
+  modifierTotalCents?: number;
   unitPriceCents: number;
   lineTotalCents: number;
   note: string | null;
@@ -47,10 +60,20 @@ export interface RestaurantOrder {
   paymentMethod: RestaurantPaymentMethod | null;
   fulfillmentType: RestaurantFulfillmentType;
   customerName: string | null;
+  tableLabel?: string | null;
+  bookingReference?: string | null;
   note: string | null;
   subtotalCents: number;
+  discountCents?: number;
+  taxCents?: number;
+  taxRateBps?: number;
   totalCents: number;
   currency: string;
+  isHeld?: boolean;
+  kotStatus?: RestaurantKotStatus;
+  sentToKitchenAt?: string | null;
+  printedAt?: string | null;
+  printCount?: number;
   paidAt: string | null;
   completedAt: string | null;
   cancelledAt: string | null;
@@ -87,6 +110,10 @@ export interface CreateRestaurantOrderItemPayload {
   menuItemId?: string | null;
   name?: string | null;
   quantity: number;
+  variantName?: string | null;
+  variantPriceCents?: number | null;
+  selectedModifiers?: RestaurantOrderModifierSelection[];
+  modifierTotalCents?: number | null;
   unitPriceCents?: number | null;
   note?: string | null;
 }
@@ -94,7 +121,14 @@ export interface CreateRestaurantOrderItemPayload {
 export interface CreateRestaurantOrderPayload {
   fulfillmentType?: RestaurantFulfillmentType;
   customerName?: string | null;
+  tableLabel?: string | null;
+  bookingReference?: string | null;
   note?: string | null;
+  discountCents?: number | null;
+  taxRateBps?: number | null;
+  isHeld?: boolean;
+  sendToKitchen?: boolean;
+  printReceipt?: boolean;
   paymentStatus?: Extract<RestaurantPaymentStatus, 'unpaid' | 'paid'>;
   paymentMethod?: RestaurantPaymentMethod | null;
   items: CreateRestaurantOrderItemPayload[];
@@ -104,8 +138,14 @@ export interface UpdateRestaurantOrderPayload {
   status?: RestaurantOrderStatus;
   paymentStatus?: RestaurantPaymentStatus;
   paymentMethod?: RestaurantPaymentMethod | null;
+  fulfillmentType?: RestaurantFulfillmentType;
   customerName?: string | null;
+  tableLabel?: string | null;
+  bookingReference?: string | null;
   note?: string | null;
+  isHeld?: boolean;
+  kotStatus?: RestaurantKotStatus;
+  printReceipt?: boolean;
 }
 
 export interface ListRestaurantOrdersParams {

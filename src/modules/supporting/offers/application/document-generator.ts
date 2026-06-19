@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Server-side document generation for immutable offer snapshots.
  *
  * Converts a TipTap JSON template to HTML and replaces {{placeholder}} variables

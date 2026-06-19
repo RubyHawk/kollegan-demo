@@ -1,14 +1,20 @@
 import { Prisma, prisma } from '@platform/database/prisma';
+import { deriveMenuVariantsFromPriceTags } from '@modules/supporting/restaurant-menu';
 import type {
   ListRestaurantOrdersInput,
   NormalizedOrderItem,
   RestaurantBusinessDayView,
   RestaurantMenuItemSnapshot,
+  RestaurantMenuModifierGroupSnapshot,
+  RestaurantMenuModifierOptionSnapshot,
+  RestaurantMenuVariantSnapshot,
+  RestaurantOrderModifierSelection,
   RestaurantOrderStatus,
   RestaurantOrderView,
   RestaurantPaymentStatus,
   RestaurantPaymentMethod,
   RestaurantFulfillmentType,
+  RestaurantKotStatus,
   RestaurantOrderSource,
   RestaurantBusinessDayStatus,
   RestaurantOrderTotals,
@@ -38,6 +44,10 @@ type OrderItemRow = {
   menuItemId: string | null;
   name: string;
   quantity: number;
+  variantName: string | null;
+  variantPriceCents: number | null;
+  selectedModifiers: Prisma.JsonValue | null;
+  modifierTotalCents: number;
   unitPriceCents: number;
   lineTotalCents: number;
   note: string | null;
@@ -55,10 +65,20 @@ type OrderRow = {
   paymentMethod: string | null;
   fulfillmentType: string;
   customerName: string | null;
+  tableLabel: string | null;
+  bookingReference: string | null;
   note: string | null;
   subtotalCents: number;
+  discountCents: number;
+  taxCents: number;
+  taxRateBps: number;
   totalCents: number;
   currency: string;
+  isHeld: boolean;
+  kotStatus: string;
+  sentToKitchenAt: Date | null;
+  printedAt: Date | null;
+  printCount: number;
   paidAt: Date | null;
   completedAt: Date | null;
   cancelledAt: Date | null;
@@ -77,6 +97,10 @@ const ORDER_INCLUDE = {
       menuItemId: true,
       name: true,
       quantity: true,
+      variantName: true,
+      variantPriceCents: true,
+      selectedModifiers: true,
+      modifierTotalCents: true,
       unitPriceCents: true,
       lineTotalCents: true,
       note: true,
@@ -84,6 +108,99 @@ const ORDER_INCLUDE = {
     },
   },
 } as const;
+
+function text(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+function int(value: unknown, fallback = 0): number {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.floor(value)) : fallback;
+}
+
+function parseOrderModifiers(value: Prisma.JsonValue | null | undefined): RestaurantOrderModifierSelection[] {
+  if (!Array.isArray(value)) return [];
+  const selections: RestaurantOrderModifierSelection[] = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+    const record = entry as Record<string, unknown>;
+    const groupName = text(record.groupName);
+    const optionName = text(record.optionName);
+    if (!groupName || !optionName) continue;
+    selections.push({
+      groupId: text(record.groupId),
+      groupName,
+      optionId: text(record.optionId),
+      optionName,
+      priceDeltaCents: int(record.priceDeltaCents),
+    });
+  }
+  return selections;
+}
+
+function parseMenuVariants(value: Prisma.JsonValue | null | undefined): RestaurantMenuVariantSnapshot[] {
+  if (!Array.isArray(value)) return [];
+  const variants: RestaurantMenuVariantSnapshot[] = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+    const record = entry as Record<string, unknown>;
+    const name = text(record.name);
+    const priceCents = int(record.priceCents, -1);
+    if (!name || priceCents < 0) continue;
+    variants.push({
+      id: text(record.id),
+      name,
+      priceCents,
+      isDefault: record.isDefault === true,
+      isAvailable: record.isAvailable !== false,
+      sortOrder: int(record.sortOrder, variants.length),
+    });
+  }
+  return variants.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'sv'));
+}
+
+function parseMenuModifierOptions(value: unknown): RestaurantMenuModifierOptionSnapshot[] {
+  if (!Array.isArray(value)) return [];
+  const options: RestaurantMenuModifierOptionSnapshot[] = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+    const record = entry as Record<string, unknown>;
+    const name = text(record.name);
+    if (!name) continue;
+    options.push({
+      id: text(record.id),
+      name,
+      priceDeltaCents: int(record.priceDeltaCents),
+      isAvailable: record.isAvailable !== false,
+      sortOrder: int(record.sortOrder, options.length),
+    });
+  }
+  return options.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'sv'));
+}
+
+function parseMenuModifierGroups(value: Prisma.JsonValue | null | undefined): RestaurantMenuModifierGroupSnapshot[] {
+  if (!Array.isArray(value)) return [];
+  const groups: RestaurantMenuModifierGroupSnapshot[] = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+    const record = entry as Record<string, unknown>;
+    const name = text(record.name);
+    const options = parseMenuModifierOptions(record.options);
+    if (!name || options.length === 0) continue;
+    const maxSelected = Math.max(1, int(record.maxSelected, 1));
+    groups.push({
+      id: text(record.id),
+      name,
+      minSelected: Math.min(int(record.minSelected, record.required === true ? 1 : 0), maxSelected),
+      maxSelected,
+      required: record.required === true,
+      sortOrder: int(record.sortOrder, groups.length),
+      options,
+    });
+  }
+  return groups.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'sv'));
+}
 
 function mapBusinessDay(row: BusinessDayRow): RestaurantBusinessDayView {
   return {
@@ -114,10 +231,20 @@ function mapOrder(row: OrderRow): RestaurantOrderView {
     paymentMethod: row.paymentMethod as RestaurantPaymentMethod | null,
     fulfillmentType: row.fulfillmentType as RestaurantFulfillmentType,
     customerName: row.customerName,
+    tableLabel: row.tableLabel,
+    bookingReference: row.bookingReference,
     note: row.note,
     subtotalCents: row.subtotalCents,
+    discountCents: row.discountCents,
+    taxCents: row.taxCents,
+    taxRateBps: row.taxRateBps,
     totalCents: row.totalCents,
     currency: row.currency,
+    isHeld: row.isHeld,
+    kotStatus: row.kotStatus as RestaurantKotStatus,
+    sentToKitchenAt: row.sentToKitchenAt?.toISOString() ?? null,
+    printedAt: row.printedAt?.toISOString() ?? null,
+    printCount: row.printCount,
     paidAt: row.paidAt?.toISOString() ?? null,
     completedAt: row.completedAt?.toISOString() ?? null,
     cancelledAt: row.cancelledAt?.toISOString() ?? null,
@@ -130,6 +257,10 @@ function mapOrder(row: OrderRow): RestaurantOrderView {
       menuItemId: item.menuItemId,
       name: item.name,
       quantity: item.quantity,
+      variantName: item.variantName,
+      variantPriceCents: item.variantPriceCents,
+      selectedModifiers: parseOrderModifiers(item.selectedModifiers),
+      modifierTotalCents: item.modifierTotalCents,
       unitPriceCents: item.unitPriceCents,
       lineTotalCents: item.lineTotalCents,
       note: item.note,
@@ -223,8 +354,20 @@ export const restaurantOrderRepository = {
     if (ids.length === 0) return [];
     return prisma.restaurantMenuItem.findMany({
       where: { id: { in: ids }, organizationId, deletedAt: null },
-      select: { id: true, name: true, priceCents: true, currency: true },
-    });
+      select: { id: true, name: true, priceCents: true, currency: true, tags: true, variants: true, modifierGroups: true },
+    }).then((rows) => rows.map((row) => {
+      const parsedVariants = parseMenuVariants(row.variants);
+      return {
+        id: row.id,
+        name: row.name,
+        priceCents: row.priceCents,
+        currency: row.currency,
+        variants: parsedVariants.length > 0 || row.priceCents !== null
+          ? parsedVariants
+          : deriveMenuVariantsFromPriceTags(row.tags),
+        modifierGroups: parseMenuModifierGroups(row.modifierGroups),
+      };
+    }));
   },
 
   async createOrder(
@@ -234,9 +377,14 @@ export const restaurantOrderRepository = {
     input: {
       fulfillmentType: RestaurantFulfillmentType;
       customerName: string | null;
+      tableLabel: string | null;
+      bookingReference: string | null;
       note: string | null;
       paymentStatus: RestaurantPaymentStatus;
       paymentMethod: RestaurantPaymentMethod | null;
+      isHeld: boolean;
+      kotStatus: RestaurantKotStatus;
+      printReceipt: boolean;
       items: NormalizedOrderItem[];
       totals: RestaurantOrderTotals;
     },
@@ -262,10 +410,20 @@ export const restaurantOrderRepository = {
               paymentMethod: input.paymentMethod,
               fulfillmentType: input.fulfillmentType,
               customerName: input.customerName,
+              tableLabel: input.tableLabel,
+              bookingReference: input.bookingReference,
               note: input.note,
               subtotalCents: input.totals.subtotalCents,
+              discountCents: input.totals.discountCents,
+              taxCents: input.totals.taxCents,
+              taxRateBps: input.totals.taxRateBps,
               totalCents: input.totals.totalCents,
               currency: input.totals.currency,
+              isHeld: input.isHeld,
+              kotStatus: input.printReceipt ? 'printed' : input.kotStatus,
+              sentToKitchenAt: input.kotStatus !== 'not_sent' || input.printReceipt ? now : null,
+              printedAt: input.printReceipt ? now : null,
+              printCount: input.printReceipt ? 1 : 0,
               paidAt: input.paymentStatus === 'paid' ? now : null,
               createdBy: actorId,
               updatedBy: actorId,
@@ -275,6 +433,10 @@ export const restaurantOrderRepository = {
                   menuItemId: item.menuItemId,
                   name: item.name,
                   quantity: item.quantity,
+                  variantName: item.variantName,
+                  variantPriceCents: item.variantPriceCents,
+                  selectedModifiers: item.selectedModifiers as unknown as Prisma.InputJsonValue,
+                  modifierTotalCents: item.modifierTotalCents,
                   unitPriceCents: item.unitPriceCents,
                   lineTotalCents: item.lineTotalCents,
                   note: item.note,
@@ -363,6 +525,7 @@ export const restaurantOrderRepository = {
     if (!existing) return null;
 
     const now = new Date();
+    const nextKotStatus = input.printReceipt ? 'printed' : input.kotStatus;
     const row = await prisma.restaurantOrder.update({
       where: { id },
       data: {
@@ -376,8 +539,17 @@ export const restaurantOrderRepository = {
           paidAt: input.paymentStatus === 'paid' ? now : input.paymentStatus === 'unpaid' ? null : undefined,
         } : {}),
         ...(input.paymentMethod !== undefined ? { paymentMethod: input.paymentMethod } : {}),
+        ...(input.fulfillmentType !== undefined ? { fulfillmentType: input.fulfillmentType } : {}),
         ...(input.customerName !== undefined ? { customerName: input.customerName } : {}),
+        ...(input.tableLabel !== undefined ? { tableLabel: input.tableLabel } : {}),
+        ...(input.bookingReference !== undefined ? { bookingReference: input.bookingReference } : {}),
         ...(input.note !== undefined ? { note: input.note } : {}),
+        ...(input.isHeld !== undefined ? { isHeld: input.isHeld } : {}),
+        ...(nextKotStatus !== undefined ? {
+          kotStatus: nextKotStatus,
+          ...(nextKotStatus !== 'not_sent' ? { sentToKitchenAt: now } : {}),
+          ...(nextKotStatus === 'printed' ? { printedAt: now, printCount: { increment: 1 } } : {}),
+        } : {}),
         updatedBy: actorId,
       },
       include: ORDER_INCLUDE,

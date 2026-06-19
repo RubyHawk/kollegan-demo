@@ -1,8 +1,10 @@
+import { redirect } from 'next/navigation';
 import { getDashboardOrganizationIdForUser, getDashboardReadModel } from '@modules/generic/dashboard';
-import { getSessionUser } from '@modules/supporting/auth';
+import { getSessionUser, hasPermission } from '@modules/supporting/auth';
 import { listEnabledOrganizationModules } from '@modules/supporting/identity';
 import DashboardView from './_components/DashboardView';
 import { RestaurantDashboard } from './_components/restaurant-dashboard';
+import { resolveRestaurantPortalLanding } from './restaurant-portal-landing';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -79,6 +81,15 @@ export default async function DashboardPage() {
 
   const enabledModules = await listEnabledOrganizationModules(orgId);
   if (enabledModules.includes('restaurant_public_site')) {
+    if (enabledModules.includes('restaurant_orders')) {
+      const roles = user.roles ?? [];
+      const [canWriteOrders, canReadOrders] = await Promise.all([
+        hasPermission(roles, 'orders.write').catch(() => false),
+        hasPermission(roles, 'orders.read').catch(() => false),
+      ]);
+      const landing = resolveRestaurantPortalLanding({ enabledModules, roles, canReadOrders, canWriteOrders });
+      if (landing) redirect(landing);
+    }
     return <RestaurantDashboard organizationId={orgId} userId={user.id} roles={user.roles} />;
   }
 

@@ -22,6 +22,7 @@ export type {
   UpdateReservationRequestInput,
   UpsertOpeningHourInput,
 } from './domain/restaurant-menu.entity';
+export { deriveMenuVariantsFromPriceTags } from './domain/restaurant-menu.entity';
 export {
   createPublicReservationRequest,
   createRestaurantEvent,

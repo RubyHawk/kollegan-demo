@@ -79,7 +79,69 @@ describe('restaurant order domain rules', () => {
     ]);
     expect(calculateOrderTotals(items)).toEqual({
       subtotalCents: 13_500,
+      discountCents: 0,
+      taxCents: 1_446,
+      taxRateBps: 1_200,
       totalCents: 13_500,
+      currency: 'SEK',
+    });
+  });
+
+  it('snapshots variants, modifiers, discount, and VAT totals', () => {
+    const menu = new Map([
+      ['menu_1', {
+        id: 'menu_1',
+        name: 'Pizza',
+        priceCents: null,
+        currency: 'SEK',
+        variants: [
+          { id: 'stor', name: 'Stor', priceCents: 10_000, isDefault: true, isAvailable: true, sortOrder: 0 },
+        ],
+        modifierGroups: [
+          {
+            id: 'sas',
+            name: 'Sås',
+            minSelected: 0,
+            maxSelected: 1,
+            required: false,
+            sortOrder: 0,
+            options: [
+              { id: 'vitlok', name: 'Vitlök', priceDeltaCents: 1_000, isAvailable: true, sortOrder: 0 },
+            ],
+          },
+        ],
+      }],
+    ]);
+
+    const items = normalizeOrderItems([
+      {
+        menuItemId: 'menu_1',
+        quantity: 2,
+        variantName: 'Stor',
+        selectedModifiers: [{
+          groupId: 'sas',
+          groupName: 'Sås',
+          optionId: 'vitlok',
+          optionName: 'Vitlök',
+          priceDeltaCents: 1_000,
+        }],
+      },
+    ], menu);
+
+    expect(items[0]).toMatchObject({
+      name: 'Pizza',
+      variantName: 'Stor',
+      variantPriceCents: 10_000,
+      modifierTotalCents: 1_000,
+      unitPriceCents: 11_000,
+      lineTotalCents: 22_000,
+    });
+    expect(calculateOrderTotals(items, 'SEK', { discountCents: 2_000, taxRateBps: 1_200 })).toEqual({
+      subtotalCents: 22_000,
+      discountCents: 2_000,
+      taxCents: 2_143,
+      taxRateBps: 1_200,
+      totalCents: 20_000,
       currency: 'SEK',
     });
   });

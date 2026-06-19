@@ -29,12 +29,25 @@ function orderIdFromUrl(req: Request): string {
 const OrderStatusSchema = z.enum(['new', 'preparing', 'ready', 'completed', 'cancelled']);
 const PaymentStatusSchema = z.enum(['unpaid', 'paid', 'refunded']);
 const PaymentMethodSchema = z.enum(['cash', 'card', 'swish', 'other']);
-const FulfillmentTypeSchema = z.enum(['takeaway', 'dine_in', 'counter']);
+const FulfillmentTypeSchema = z.enum(['takeaway', 'dine_in', 'counter', 'booking_linked']);
+const KotStatusSchema = z.enum(['not_sent', 'sent', 'printed']);
+
+const ModifierSelectionSchema = z.object({
+  groupId: z.string().max(64).nullable().optional().transform((value) => value ?? null),
+  groupName: z.string().min(1).max(80),
+  optionId: z.string().max(64).nullable().optional().transform((value) => value ?? null),
+  optionName: z.string().min(1).max(80),
+  priceDeltaCents: z.number().int().min(0).max(250_000).optional().transform((value) => value ?? 0),
+});
 
 const OrderItemSchema = z.object({
   menuItemId: z.string().uuid().nullable().optional(),
   name: z.string().max(160).nullable().optional(),
   quantity: z.number().int().min(1).max(99),
+  variantName: z.string().max(80).nullable().optional(),
+  variantPriceCents: z.number().int().min(0).max(1_000_000).nullable().optional(),
+  selectedModifiers: z.array(ModifierSelectionSchema).max(80).optional(),
+  modifierTotalCents: z.number().int().min(0).max(250_000).nullable().optional(),
   unitPriceCents: z.number().int().min(0).max(1_000_000).nullable().optional(),
   note: z.string().max(500).nullable().optional(),
 });
@@ -42,7 +55,14 @@ const OrderItemSchema = z.object({
 const CreateOrderSchema = z.object({
   fulfillmentType: FulfillmentTypeSchema.optional(),
   customerName: z.string().max(120).nullable().optional(),
+  tableLabel: z.string().max(60).nullable().optional(),
+  bookingReference: z.string().max(120).nullable().optional(),
   note: z.string().max(1000).nullable().optional(),
+  discountCents: z.number().int().min(0).max(1_000_000).nullable().optional(),
+  taxRateBps: z.number().int().min(0).max(25_000).nullable().optional(),
+  isHeld: z.boolean().optional(),
+  sendToKitchen: z.boolean().optional(),
+  printReceipt: z.boolean().optional(),
   paymentStatus: z.enum(['unpaid', 'paid']).optional(),
   paymentMethod: PaymentMethodSchema.nullable().optional(),
   items: z.array(OrderItemSchema).min(1).max(80),
@@ -52,8 +72,14 @@ const UpdateOrderSchema = z.object({
   status: OrderStatusSchema.optional(),
   paymentStatus: PaymentStatusSchema.optional(),
   paymentMethod: PaymentMethodSchema.nullable().optional(),
+  fulfillmentType: FulfillmentTypeSchema.optional(),
   customerName: z.string().max(120).nullable().optional(),
+  tableLabel: z.string().max(60).nullable().optional(),
+  bookingReference: z.string().max(120).nullable().optional(),
   note: z.string().max(1000).nullable().optional(),
+  isHeld: z.boolean().optional(),
+  kotStatus: KotStatusSchema.optional(),
+  printReceipt: z.boolean().optional(),
 });
 
 const ListOrdersQuerySchema = z.object({

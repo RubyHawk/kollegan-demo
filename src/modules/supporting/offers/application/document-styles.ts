@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Document HTML style injection helpers.
  *
  * Kept separate from document generation so renderer orchestration stays readable.

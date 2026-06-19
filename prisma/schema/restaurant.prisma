@@ -75,6 +75,9 @@ model RestaurantMenuItem {
   allergens      String[]  @default([])
   tags           String[]  @default([])
   ingredients    Json?
+  variants       Json?
+  modifierGroups Json?
+  kitchenStation String?
   isAvailable    Boolean   @default(true)
   sortOrder      Int       @default(0)
   createdBy      String?
@@ -188,10 +191,20 @@ model RestaurantOrder {
   paymentMethod   String?   // cash | card | swish | other
   fulfillmentType String    @default("takeaway") // takeaway | dine_in | counter
   customerName    String?
+  tableLabel      String?
+  bookingReference String?
   note            String?
   subtotalCents   Int       @default(0)
+  discountCents   Int       @default(0)
+  taxCents        Int       @default(0)
+  taxRateBps      Int       @default(1200)
   totalCents      Int       @default(0)
   currency        String    @default("SEK")
+  isHeld          Boolean   @default(false)
+  kotStatus       String    @default("not_sent") // not_sent | sent | printed
+  sentToKitchenAt DateTime?
+  printedAt       DateTime?
+  printCount      Int       @default(0)
   paidAt          DateTime?
   completedAt     DateTime?
   cancelledAt     DateTime?
@@ -221,6 +234,10 @@ model RestaurantOrderItem {
   menuItemId     String?
   name           String
   quantity       Int      @default(1)
+  variantName    String?
+  variantPriceCents Int?
+  selectedModifiers Json?
+  modifierTotalCents Int    @default(0)
   unitPriceCents Int      @default(0)
   lineTotalCents Int      @default(0)
   note           String?

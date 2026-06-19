@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { checkHotelAvailability } from '@demos/hotel/application/hotel-ai.service';
 import { logRoomsQueried } from '@demos/hotel/infrastructure/room-store';
 
