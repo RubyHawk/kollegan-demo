@@ -121,11 +121,9 @@ export async function closeBusinessDay(
   const businessDay = await restaurantOrderRepository.getOpenBusinessDay(organizationId);
   if (!businessDay) throw Errors.conflict('Ingen dag är startad.');
 
-  const orders = await restaurantOrderRepository.listOrders(organizationId, { businessDayId: businessDay.id });
-  const active = orders.filter((order) => ['new', 'preparing', 'ready'].includes(order.status));
-  if (active.length > 0) throw Errors.conflict('Stäng aktiva ordrar innan dagen avslutas.');
-  const unpaid = orders.filter((order) => order.status !== 'cancelled' && order.paymentStatus === 'unpaid');
-  if (unpaid.length > 0) throw Errors.conflict('Hantera obetalda ordrar innan dagen avslutas.');
+  const blocking = await restaurantOrderRepository.countBusinessDayBlockingOrders(organizationId, businessDay.id);
+  if (blocking.activeCount > 0) throw Errors.conflict('Stäng aktiva ordrar innan dagen avslutas.');
+  if (blocking.unpaidCount > 0) throw Errors.conflict('Hantera obetalda ordrar innan dagen avslutas.');
 
   const closed = await restaurantOrderRepository.closeBusinessDay(
     organizationId,
@@ -222,8 +220,8 @@ export async function getRestaurantOrderSummary(organizationId: string): Promise
   await requireOrdersModule(organizationId);
   const businessDay = await restaurantOrderRepository.getOpenBusinessDay(organizationId);
   const orders = businessDay
-    ? await restaurantOrderRepository.listOrders(organizationId, { businessDayId: businessDay.id })
-    : await restaurantOrderRepository.listOrders(organizationId, {
+    ? await restaurantOrderRepository.listOrdersForSummary(organizationId, { businessDayId: businessDay.id })
+    : await restaurantOrderRepository.listOrdersForSummary(organizationId, {
       from: stockholmDayBounds(new Date()).start.toISOString(),
       to: stockholmDayBounds(new Date()).end.toISOString(),
     });

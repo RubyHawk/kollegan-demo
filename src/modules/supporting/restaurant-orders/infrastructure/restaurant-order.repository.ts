@@ -1,4 +1,4 @@
-import { prisma } from '@platform/database/prisma';
+import { Prisma, prisma } from '@platform/database/prisma';
 import type {
   ListRestaurantOrdersInput,
   NormalizedOrderItem,
@@ -14,6 +14,9 @@ import type {
   RestaurantOrderTotals,
   UpdateRestaurantOrderInput,
 } from '../domain/restaurant-order.entity';
+
+const ACTIVE_ORDER_STATUSES: RestaurantOrderStatus[] = ['new', 'preparing', 'ready'];
+const MAX_ORDER_NUMBER_RETRIES = 5;
 
 type BusinessDayRow = {
   id: string;
@@ -135,6 +138,29 @@ function mapOrder(row: OrderRow): RestaurantOrderView {
   };
 }
 
+function buildOrderWhere(
+  organizationId: string,
+  input: ListRestaurantOrdersInput = {},
+): Prisma.RestaurantOrderWhereInput {
+  return {
+    organizationId,
+    deletedAt: null,
+    ...(input.businessDayId ? { businessDayId: input.businessDayId } : {}),
+    ...(input.activeOnly ? { status: { in: ACTIVE_ORDER_STATUSES } } : input.status ? { status: input.status } : {}),
+    ...(input.paymentStatus ? { paymentStatus: input.paymentStatus } : {}),
+    ...(input.from || input.to ? {
+      createdAt: {
+        ...(input.from ? { gte: new Date(input.from) } : {}),
+        ...(input.to ? { lte: new Date(input.to) } : {}),
+      },
+    } : {}),
+  };
+}
+
+function isRetryableOrderNumberConflict(err: unknown): boolean {
+  return err instanceof Prisma.PrismaClientKnownRequestError && ['P2002', 'P2034'].includes(err.code);
+}
+
 export const restaurantOrderRepository = {
   async getOpenBusinessDay(organizationId: string): Promise<RestaurantBusinessDayView | null> {
     const row = await prisma.restaurantBusinessDay.findFirst({
@@ -215,49 +241,57 @@ export const restaurantOrderRepository = {
       totals: RestaurantOrderTotals;
     },
   ): Promise<RestaurantOrderView> {
-    const row = await prisma.$transaction(async (tx) => {
-      const maxNumber = await tx.restaurantOrder.aggregate({
-        where: { organizationId, businessDayId, deletedAt: null },
-        _max: { orderNumber: true },
-      });
-      const orderNumber = (maxNumber._max.orderNumber ?? 0) + 1;
-      const now = new Date();
+    for (let attempt = 0; attempt < MAX_ORDER_NUMBER_RETRIES; attempt++) {
+      try {
+        const row = await prisma.$transaction(async (tx) => {
+          const maxNumber = await tx.restaurantOrder.aggregate({
+            where: { organizationId, businessDayId, deletedAt: null },
+            _max: { orderNumber: true },
+          });
+          const orderNumber = (maxNumber._max.orderNumber ?? 0) + 1;
+          const now = new Date();
 
-      return tx.restaurantOrder.create({
-        data: {
-          organizationId,
-          businessDayId,
-          orderNumber,
-          source: 'portal',
-          status: 'new',
-          paymentStatus: input.paymentStatus,
-          paymentMethod: input.paymentMethod,
-          fulfillmentType: input.fulfillmentType,
-          customerName: input.customerName,
-          note: input.note,
-          subtotalCents: input.totals.subtotalCents,
-          totalCents: input.totals.totalCents,
-          currency: input.totals.currency,
-          paidAt: input.paymentStatus === 'paid' ? now : null,
-          createdBy: actorId,
-          updatedBy: actorId,
-          items: {
-            create: input.items.map((item) => ({
+          return tx.restaurantOrder.create({
+            data: {
               organizationId,
-              menuItemId: item.menuItemId,
-              name: item.name,
-              quantity: item.quantity,
-              unitPriceCents: item.unitPriceCents,
-              lineTotalCents: item.lineTotalCents,
-              note: item.note,
-              sortOrder: item.sortOrder,
-            })),
-          },
-        },
-        include: ORDER_INCLUDE,
-      });
-    });
-    return mapOrder(row as OrderRow);
+              businessDayId,
+              orderNumber,
+              source: 'portal',
+              status: 'new',
+              paymentStatus: input.paymentStatus,
+              paymentMethod: input.paymentMethod,
+              fulfillmentType: input.fulfillmentType,
+              customerName: input.customerName,
+              note: input.note,
+              subtotalCents: input.totals.subtotalCents,
+              totalCents: input.totals.totalCents,
+              currency: input.totals.currency,
+              paidAt: input.paymentStatus === 'paid' ? now : null,
+              createdBy: actorId,
+              updatedBy: actorId,
+              items: {
+                create: input.items.map((item) => ({
+                  organizationId,
+                  menuItemId: item.menuItemId,
+                  name: item.name,
+                  quantity: item.quantity,
+                  unitPriceCents: item.unitPriceCents,
+                  lineTotalCents: item.lineTotalCents,
+                  note: item.note,
+                  sortOrder: item.sortOrder,
+                })),
+              },
+            },
+            include: ORDER_INCLUDE,
+          });
+        }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+        return mapOrder(row as OrderRow);
+      } catch (err) {
+        if (!isRetryableOrderNumberConflict(err) || attempt === MAX_ORDER_NUMBER_RETRIES - 1) throw err;
+      }
+    }
+
+    throw new Error('Failed to allocate restaurant order number');
   },
 
   async getOrderById(organizationId: string, id: string): Promise<RestaurantOrderView | null> {
@@ -269,26 +303,51 @@ export const restaurantOrderRepository = {
   },
 
   async listOrders(organizationId: string, input: ListRestaurantOrdersInput = {}): Promise<RestaurantOrderView[]> {
-    const activeStatuses: RestaurantOrderStatus[] = ['new', 'preparing', 'ready'];
     const rows = await prisma.restaurantOrder.findMany({
-      where: {
-        organizationId,
-        deletedAt: null,
-        ...(input.businessDayId ? { businessDayId: input.businessDayId } : {}),
-        ...(input.activeOnly ? { status: { in: activeStatuses } } : input.status ? { status: input.status } : {}),
-        ...(input.paymentStatus ? { paymentStatus: input.paymentStatus } : {}),
-        ...(input.from || input.to ? {
-          createdAt: {
-            ...(input.from ? { gte: new Date(input.from) } : {}),
-            ...(input.to ? { lte: new Date(input.to) } : {}),
-          },
-        } : {}),
-      },
+      where: buildOrderWhere(organizationId, input),
       orderBy: [{ createdAt: 'desc' }],
       take: 200,
       include: ORDER_INCLUDE,
     });
     return rows.map((row) => mapOrder(row as OrderRow));
+  },
+
+  async listOrdersForSummary(
+    organizationId: string,
+    input: ListRestaurantOrdersInput = {},
+  ): Promise<RestaurantOrderView[]> {
+    const rows = await prisma.restaurantOrder.findMany({
+      where: buildOrderWhere(organizationId, input),
+      orderBy: [{ createdAt: 'desc' }],
+      include: ORDER_INCLUDE,
+    });
+    return rows.map((row) => mapOrder(row as OrderRow));
+  },
+
+  async countBusinessDayBlockingOrders(
+    organizationId: string,
+    businessDayId: string,
+  ): Promise<{ activeCount: number; unpaidCount: number }> {
+    const [activeCount, unpaidCount] = await Promise.all([
+      prisma.restaurantOrder.count({
+        where: {
+          organizationId,
+          businessDayId,
+          deletedAt: null,
+          status: { in: ACTIVE_ORDER_STATUSES },
+        },
+      }),
+      prisma.restaurantOrder.count({
+        where: {
+          organizationId,
+          businessDayId,
+          deletedAt: null,
+          status: { not: 'cancelled' },
+          paymentStatus: 'unpaid',
+        },
+      }),
+    ]);
+    return { activeCount, unpaidCount };
   },
 
   async updateOrder(

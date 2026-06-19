@@ -38,7 +38,9 @@ export function KassaActiveOrdersStrip({
   summary,
   activeOrders,
   busy,
+  canMarkPaid,
   canAdmin,
+  canReadReports,
   onMarkPaid,
   onMoveOrder,
 }: {
@@ -46,7 +48,9 @@ export function KassaActiveOrdersStrip({
   summary: RestaurantOrderSummary | null;
   activeOrders: RestaurantOrder[];
   busy: string | null;
+  canMarkPaid: boolean;
   canAdmin: boolean;
+  canReadReports: boolean;
   onMarkPaid: (order: RestaurantOrder) => void;
   onMoveOrder: (order: RestaurantOrder, status: RestaurantOrderStatus) => void;
 }) {
@@ -57,12 +61,18 @@ export function KassaActiveOrdersStrip({
       <div className="flex gap-3 overflow-x-auto">
         <div className="flex min-w-[220px] items-center justify-between rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2">
           <div>
-            <p className="text-xs text-[var(--ui-text-muted)]">Försäljning</p>
-            <p className="text-lg font-semibold tabular-nums">{money(summary?.salesCents ?? 0)}</p>
+            <p className="text-xs text-[var(--ui-text-muted)]">{canReadReports ? 'Försäljning' : 'Aktiva ordrar'}</p>
+            <p className="text-lg font-semibold tabular-nums">
+              {canReadReports ? money(summary?.salesCents ?? 0) : activeOrders.length}
+            </p>
           </div>
-          <StatusBadge tone={(summary?.unpaidOrderCount ?? 0) > 0 ? 'warning' : 'success'}>
-            {summary?.unpaidOrderCount ?? 0} obetalda
-          </StatusBadge>
+          {canReadReports ? (
+            <StatusBadge tone={(summary?.unpaidOrderCount ?? 0) > 0 ? 'warning' : 'success'}>
+              {summary?.unpaidOrderCount ?? 0} obetalda
+            </StatusBadge>
+          ) : (
+            <StatusBadge tone="neutral">Rapport låst</StatusBadge>
+          )}
         </div>
 
         {activeOrders.length === 0 ? (
@@ -89,7 +99,7 @@ export function KassaActiveOrdersStrip({
                   {order.items.map((item) => `${item.quantity} ${item.name}`).join(', ')}
                 </p>
               </div>
-              {order.paymentStatus !== 'paid' ? (
+              {canMarkPaid && order.paymentStatus !== 'paid' ? (
                 <Button
                   type="button"
                   variant="secondary"

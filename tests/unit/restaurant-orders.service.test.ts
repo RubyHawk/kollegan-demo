@@ -18,6 +18,8 @@ vi.mock('../../src/modules/supporting/restaurant-orders/infrastructure/restauran
     createOrder: vi.fn(),
     getOrderById: vi.fn(),
     listOrders: vi.fn(),
+    listOrdersForSummary: vi.fn(),
+    countBusinessDayBlockingOrders: vi.fn(),
     updateOrder: vi.fn(),
   },
 }));
@@ -26,6 +28,7 @@ import { tenantHasModule } from '@platform/tenancy/tenant-resolver';
 import {
   closeBusinessDay,
   createRestaurantOrder,
+  getRestaurantOrderSummary,
   startBusinessDay,
   updateRestaurantOrder,
 } from '../../src/modules/supporting/restaurant-orders/application/restaurant-order.service';
@@ -86,6 +89,8 @@ describe('restaurant order service', () => {
     vi.mocked(restaurantOrderRepository.createOrder).mockResolvedValue(order);
     vi.mocked(restaurantOrderRepository.getOrderById).mockResolvedValue(order);
     vi.mocked(restaurantOrderRepository.listOrders).mockResolvedValue([]);
+    vi.mocked(restaurantOrderRepository.listOrdersForSummary).mockResolvedValue([]);
+    vi.mocked(restaurantOrderRepository.countBusinessDayBlockingOrders).mockResolvedValue({ activeCount: 0, unpaidCount: 0 });
     vi.mocked(restaurantOrderRepository.updateOrder).mockResolvedValue(order);
     vi.mocked(restaurantOrderRepository.closeBusinessDay).mockResolvedValue({ ...day, status: 'closed', closedAt: '2026-06-18T20:00:00.000Z' });
   });
@@ -127,12 +132,34 @@ describe('restaurant order service', () => {
   });
 
   it('prevents closing the day while active or unpaid orders remain', async () => {
-    vi.mocked(restaurantOrderRepository.listOrders).mockResolvedValue([{ ...order, status: 'ready' }]);
+    vi.mocked(restaurantOrderRepository.countBusinessDayBlockingOrders).mockResolvedValue({ activeCount: 1, unpaidCount: 0 });
 
     await expect(closeBusinessDay('org_1', 'manager_1')).rejects.toMatchObject({
       problem: { status: 409 },
     });
     expect(restaurantOrderRepository.closeBusinessDay).not.toHaveBeenCalled();
+    expect(restaurantOrderRepository.listOrders).not.toHaveBeenCalled();
+  });
+
+  it('prevents closing the day while unpaid orders remain beyond the UI list cap', async () => {
+    vi.mocked(restaurantOrderRepository.countBusinessDayBlockingOrders).mockResolvedValue({ activeCount: 0, unpaidCount: 1 });
+
+    await expect(closeBusinessDay('org_1', 'manager_1')).rejects.toMatchObject({
+      problem: { status: 409 },
+    });
+    expect(restaurantOrderRepository.closeBusinessDay).not.toHaveBeenCalled();
+    expect(restaurantOrderRepository.listOrders).not.toHaveBeenCalled();
+  });
+
+  it('builds summaries from the uncapped summary query, not the UI list', async () => {
+    vi.mocked(restaurantOrderRepository.listOrdersForSummary).mockResolvedValue([{ ...order, paymentStatus: 'paid' }]);
+
+    await expect(getRestaurantOrderSummary('org_1')).resolves.toMatchObject({
+      orderCount: 1,
+      salesCents: 6_000,
+    });
+    expect(restaurantOrderRepository.listOrdersForSummary).toHaveBeenCalledWith('org_1', { businessDayId: 'day_1' });
+    expect(restaurantOrderRepository.listOrders).not.toHaveBeenCalled();
   });
 
   it('requires admin permission to cancel an order', async () => {

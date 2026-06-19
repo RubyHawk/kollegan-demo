@@ -32,14 +32,18 @@ export function KassaClient({
   initialActiveOrders,
   initialSummary,
   initialShift,
+  canMarkPaid,
   canAdmin,
+  canReadReports,
 }: {
   initialMenu: RestaurantMenuCategory[];
   initialBusinessDay: RestaurantBusinessDay | null;
   initialActiveOrders: RestaurantOrder[];
   initialSummary: RestaurantOrderSummary | null;
   initialShift: AttendanceShift | null;
+  canMarkPaid: boolean;
   canAdmin: boolean;
+  canReadReports: boolean;
 }) {
   const categories = useMemo(
     () => initialMenu.filter((category) => category.isActive && availableItems(category).length > 0),
@@ -52,7 +56,7 @@ export function KassaClient({
   const [draftItems, setDraftItems] = useState<DraftItem[]>([]);
   const [orderNote, setOrderNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<RestaurantPaymentMethod>('card');
-  const [paidNow, setPaidNow] = useState(true);
+  const [paidNow, setPaidNow] = useState(canMarkPaid);
   const [customName, setCustomName] = useState('');
   const [customPrice, setCustomPrice] = useState('');
   const [error, setError] = useState('');
@@ -75,6 +79,10 @@ export function KassaClient({
   useEffect(() => {
     if (!selectedCategoryId && categories[0]) setSelectedCategoryId(categories[0].id);
   }, [categories, selectedCategoryId]);
+
+  useEffect(() => {
+    if (!canMarkPaid && paidNow) setPaidNow(false);
+  }, [canMarkPaid, paidNow]);
 
   const selectedCategory = categories.find((category) => category.id === selectedCategoryId) ?? categories[0] ?? null;
   const draftTotalCents = draftItems.reduce((sum, item) => sum + item.quantity * item.unitPriceCents, 0);
@@ -209,8 +217,8 @@ export function KassaClient({
       const order = await createRestaurantOrder({
         fulfillmentType: 'counter',
         note: orderNote.trim() || null,
-        paymentStatus: paidNow ? 'paid' : 'unpaid',
-        paymentMethod: paidNow ? paymentMethod : null,
+        paymentStatus: canMarkPaid && paidNow ? 'paid' : 'unpaid',
+        paymentMethod: canMarkPaid && paidNow ? paymentMethod : null,
         items: draftItems.map((item) => ({
           menuItemId: item.menuItemId,
           name: item.menuItemId ? undefined : item.name,
@@ -228,6 +236,10 @@ export function KassaClient({
   }
 
   async function markPaid(order: RestaurantOrder) {
+    if (!canMarkPaid) {
+      setError('Du får inte markera betalning.');
+      return;
+    }
     await run(`paid:${order.id}`, async () => {
       await updateRestaurantOrder(order.id, { paymentStatus: 'paid', paymentMethod });
       await refreshOrdersAndSummary();
@@ -351,6 +363,7 @@ export function KassaClient({
               orderNote={orderNote}
               paymentMethod={paymentMethod}
               paidNow={paidNow}
+              canMarkPaid={canMarkPaid}
               busy={busy}
               online={online}
               onClear={() => {
@@ -375,7 +388,9 @@ export function KassaClient({
           summary={summary}
           activeOrders={activeOrders}
           busy={busy}
+          canMarkPaid={canMarkPaid}
           canAdmin={canAdmin}
+          canReadReports={canReadReports}
           onMarkPaid={markPaid}
           onMoveOrder={moveOrder}
         />

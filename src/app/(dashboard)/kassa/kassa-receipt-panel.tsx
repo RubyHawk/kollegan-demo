@@ -25,6 +25,7 @@ export function KassaReceiptPanel({
   orderNote,
   paymentMethod,
   paidNow,
+  canMarkPaid,
   busy,
   online,
   onClear,
@@ -47,6 +48,7 @@ export function KassaReceiptPanel({
   orderNote: string;
   paymentMethod: RestaurantPaymentMethod;
   paidNow: boolean;
+  canMarkPaid: boolean;
   busy: string | null;
   online: boolean;
   onClear: () => void;
@@ -140,9 +142,10 @@ export function KassaReceiptPanel({
         <div className="mb-3 flex rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] p-1">
           <button
             type="button"
+            disabled={!canMarkPaid}
             onClick={() => onPaidNowChange(true)}
             className={cn(
-              'h-10 flex-1 rounded-[calc(var(--ui-radius-md)-2px)] text-sm font-semibold',
+              'h-10 flex-1 rounded-[calc(var(--ui-radius-md)-2px)] text-sm font-semibold disabled:cursor-not-allowed disabled:text-[var(--ui-text-disabled)]',
               paidNow ? 'bg-[var(--ui-accent)] text-[var(--ui-text-inverse)]' : 'text-[var(--ui-text-secondary)]',
             )}
           >
@@ -165,7 +168,7 @@ export function KassaReceiptPanel({
             <button
               key={method.value}
               type="button"
-              disabled={!paidNow}
+              disabled={!canMarkPaid || !paidNow}
               onClick={() => onPaymentMethodChange(method.value)}
               className={cn(
                 'h-10 rounded-[var(--ui-radius-md)] border text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50',
