@@ -273,11 +273,15 @@ function findSelectedVariant(
 
   const variants = menuItem.variants ?? [];
   if (variants.length === 0) return { name: null, priceCents: null };
+  const availableVariants = variants.filter((candidate) => candidate.isAvailable);
   const selectedName = cleanText(item.variantName);
-  const variant = selectedName
-    ? variants.find((candidate) => candidate.isAvailable && candidate.name === selectedName)
-    : variants.find((candidate) => candidate.isAvailable && candidate.isDefault)
-      ?? variants.find((candidate) => candidate.isAvailable);
+  if (selectedName) {
+    const variant = availableVariants.find((candidate) => candidate.name === selectedName);
+    if (!variant) throw new Error(`Varianten "${selectedName}" är inte tillgänglig.`);
+    return { name: variant.name, priceCents: variant.priceCents };
+  }
+
+  const variant = availableVariants.find((candidate) => candidate.isDefault) ?? availableVariants[0];
 
   return variant ? { name: variant.name, priceCents: variant.priceCents } : { name: null, priceCents: null };
 }
@@ -335,7 +339,10 @@ export function normalizeOrderItems(
     const selectedModifiers = normalizeModifierSelections(item.selectedModifiers, menuItem);
     const modifierTotalCents = selectedModifiers.reduce((sum, selection) => sum + selection.priceDeltaCents, 0)
       || (menuItem ? 0 : priceInt(item.modifierTotalCents));
-    const basePriceCents = variant.priceCents ?? menuItem?.priceCents ?? item.unitPriceCents ?? 0;
+    const basePriceCents = variant.priceCents ?? menuItem?.priceCents ?? (menuItem ? null : item.unitPriceCents ?? 0);
+    if (basePriceCents === null) {
+      throw new Error(`Menyvalet "${name || item.menuItemId || 'okänd rad'}" saknar ett tillgängligt pris.`);
+    }
     const unitPriceCents = priceInt(basePriceCents) + modifierTotalCents;
 
     return {

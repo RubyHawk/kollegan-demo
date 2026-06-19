@@ -328,8 +328,9 @@ export function KassaClient({
   }
 
   async function moveOrder(order: RestaurantOrder, status: RestaurantOrderStatus) {
-    if (status === 'completed' && order.isHeld) {
-      setError('Skicka ordern till köket innan utlämning.');
+    const isKitchenStatus = status === 'preparing' || status === 'ready' || status === 'completed';
+    if (isKitchenStatus && order.isHeld) {
+      setError('Skicka ordern till köket innan statusen ändras.');
       return;
     }
     if (status === 'completed' && order.paymentStatus !== 'paid') {

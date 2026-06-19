@@ -18,6 +18,7 @@ import { restaurantOrderRepository } from '../infrastructure/restaurant-order.re
 
 const TAG = 'RestaurantOrderService';
 const RESTAURANT_TIME_ZONE = 'Europe/Stockholm';
+const KITCHEN_ORDER_STATUSES = new Set(['preparing', 'ready', 'completed']);
 
 async function requireOrdersModule(organizationId: string) {
   const enabled = await tenantHasModule(organizationId, 'restaurant_orders');
@@ -85,6 +86,13 @@ function cleanText(value: string | null | undefined): string | null {
 
 function collectMenuItemIds(input: CreateRestaurantOrderInput): string[] {
   return Array.from(new Set(input.items.map((item) => item.menuItemId).filter((id): id is string => Boolean(id))));
+}
+
+function releasesHeldOrder(input: UpdateRestaurantOrderInput): boolean {
+  return input.isHeld === false
+    || input.kotStatus === 'sent'
+    || input.kotStatus === 'printed'
+    || input.printReceipt === true;
 }
 
 export async function getCurrentBusinessDay(organizationId: string) {
@@ -159,7 +167,13 @@ export async function createRestaurantOrder(
 
   const menuItems = await restaurantOrderRepository.findMenuItemsByIds(organizationId, collectMenuItemIds(input));
   const menuMap = new Map(menuItems.map((item) => [item.id, item]));
-  const items = normalizeOrderItems(input.items, menuMap);
+  const items = (() => {
+    try {
+      return normalizeOrderItems(input.items, menuMap);
+    } catch (err) {
+      throw Errors.validation((err as Error).message);
+    }
+  })();
   if (items.length === 0) throw Errors.validation('Ordern behöver minst en rad.');
   if (input.printReceipt && input.isHeld) throw Errors.validation('En parkerad order kan inte skrivas ut som skickad.');
 
@@ -210,8 +224,13 @@ export async function updateRestaurantOrder(
     if (input.status === 'cancelled' && !options.canAdmin) {
       throw Errors.forbidden('Endast ansvarig kan makulera ordrar.');
     }
-    if (input.status === 'completed' && existing.isHeld) {
-      throw Errors.conflict('Skicka ordern till köket innan den lämnas ut.');
+    if (
+      existing.isHeld
+      && input.status !== existing.status
+      && KITCHEN_ORDER_STATUSES.has(input.status)
+      && !releasesHeldOrder(input)
+    ) {
+      throw Errors.conflict('Skicka ordern till köket innan statusen ändras.');
     }
     try {
       assertOrderStatusTransition(existing.status, input.status);

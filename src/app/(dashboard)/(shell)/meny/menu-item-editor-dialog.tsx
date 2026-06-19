@@ -92,6 +92,10 @@ function toSizeRows(item?: RestaurantMenuItem): SizeRow[] {
   return item.tags.filter(isPriceTag).map((tag) => ({ key: makeKey(), ...parseVariantTag(tag) }));
 }
 
+function hasSizePrices(item?: RestaurantMenuItem): boolean {
+  return (item?.variants ?? []).length > 0 || (item?.tags ?? []).some(isPriceTag);
+}
+
 function modifierGroupsToText(item?: RestaurantMenuItem): string {
   const groups = item?.modifierGroups ?? [];
   if (!groups.length) return '';
@@ -165,7 +169,7 @@ interface EditorFormProps extends MenuItemEditorDialogProps {
 function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit, onClose }: EditorFormProps) {
   const isEdit = Boolean(item);
   const [name, setName] = useState(item?.name ?? '');
-  const [priceMode, setPriceMode] = useState<PriceMode>(() => (item?.tags.some(isPriceTag) ? 'sizes' : 'single'));
+  const [priceMode, setPriceMode] = useState<PriceMode>(() => (hasSizePrices(item) ? 'sizes' : 'single'));
   const [singlePrice, setSinglePrice] = useState(priceToInput(item?.priceCents ?? null));
   const [sizes, setSizes] = useState<SizeRow[]>(() => toSizeRows(item));
   // Non-price tags (e.g. "Glutenfri") are first-class badges — editable, and

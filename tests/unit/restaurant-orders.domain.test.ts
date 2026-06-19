@@ -146,6 +146,29 @@ describe('restaurant order domain rules', () => {
     });
   });
 
+  it('rejects unavailable variants for menu-backed items', () => {
+    const menu = new Map([
+      ['menu_1', {
+        id: 'menu_1',
+        name: 'Pizza',
+        priceCents: null,
+        currency: 'SEK',
+        variants: [
+          { id: 'stor', name: 'Stor', priceCents: 10_000, isDefault: true, isAvailable: true, sortOrder: 0 },
+        ],
+      }],
+    ]);
+
+    expect(() => normalizeOrderItems([
+      {
+        menuItemId: 'menu_1',
+        quantity: 1,
+        variantName: 'Barn',
+        unitPriceCents: 1,
+      },
+    ], menu)).toThrow(/inte tillgänglig/);
+  });
+
   it('allows active workflow transitions and blocks terminal rollback', () => {
     expect(() => assertOrderStatusTransition('new', 'preparing')).not.toThrow();
     expect(() => assertOrderStatusTransition('preparing', 'ready')).not.toThrow();
