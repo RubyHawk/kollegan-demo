@@ -158,6 +158,9 @@ export interface UpdateRestaurantOrderInput {
   tableLabel?: string | null;
   bookingReference?: string | null;
   note?: string | null;
+  discountCents?: number | null;
+  taxRateBps?: number | null;
+  items?: CreateRestaurantOrderItemInput[];
   isHeld?: boolean;
   kotStatus?: RestaurantKotStatus;
   printReceipt?: boolean;
@@ -357,6 +360,12 @@ export function normalizeOrderItems(
 ): NormalizedOrderItem[] {
   return input.map((item, index) => {
     const menuItem = item.menuItemId ? menuItems.get(item.menuItemId) ?? null : null;
+    if (item.menuItemId && !menuItem) {
+      throw new Error(`Menyvalet "${item.menuItemId}" finns inte i den här restaurangens meny.`);
+    }
+    if (menuItem?.isAvailable === false) {
+      throw new Error(`Menyvalet "${menuItem.name}" är inte tillgängligt.`);
+    }
     const name = (menuItem?.name ?? item.name ?? '').trim();
     const quantity = Math.max(1, Math.floor(item.quantity));
     const variant = findSelectedVariant(item, menuItem);

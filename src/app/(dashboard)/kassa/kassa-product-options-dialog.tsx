@@ -88,12 +88,14 @@ export function KassaProductOptionsDialog({
   function addLine() {
     onAdd({
       menuItemId: activeItem.id,
+      imageUrl: activeItem.imageUrl,
       name: activeItem.name,
       quantity,
       variantName: selectedVariant?.name ?? null,
       variantPriceCents: selectedVariant?.priceCents ?? null,
       selectedModifiers,
       modifierTotalCents: modifierTotal,
+      basePriceCents: basePrice,
       unitPriceCents: unitPrice,
       note: null,
     });

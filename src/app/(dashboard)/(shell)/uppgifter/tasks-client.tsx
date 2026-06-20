@@ -115,7 +115,7 @@ export function TasksClient({ canWrite }: { canWrite: boolean }) {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="fluffy-portal-page space-y-6 p-4 md:p-6">
       <PageHeader
         eyebrow="Restaurang"
         title="Uppgifter"
