@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CarFrontIcon, MapPinIcon } from 'lucide-react';
+import { CarFrontIcon } from 'lucide-react';
 import {
   DAY_LABELS,
   closedLabel,
@@ -13,18 +13,22 @@ import {
 
 const TZ = 'Europe/Stockholm';
 
-// Wavy "road" geometry. The SVG is stretched to the road box (preserveAspectRatio="none"), so a
-// point (x, y) in this viewBox maps linearly to that box — letting us drop the live pin exactly on
-// the line by evaluating the same wave function the path is built from.
+// "Road" geometry. The SVG is stretched to the road box (preserveAspectRatio="none"), so a point
+// (x, y) in this viewBox maps linearly to that box — letting us drop the live pin exactly on the
+// line by evaluating the same profile function the path is built from.
 const VB_W = 740;
 const VB_H = 160;
 const RX0 = 20;
 const RX1 = 720;
-const BASE_Y = 104;
-const AMP = 15;
+const BASE_Y = 108;
 
+// A calmer, road-like profile: one gentle hump early in the open stretch, then it settles almost
+// flat with a faint ripple toward closing — less decorative than a full sine wave.
 function waveY(x: number): number {
-  return BASE_Y - AMP * Math.sin(((x - RX0) / (RX1 - RX0)) * Math.PI * 3);
+  const t = (x - RX0) / (RX1 - RX0); // 0 at open … 1 at close
+  const hump = Math.exp(-((t - 0.24) ** 2) / 0.02) * 17;
+  const ripple = Math.sin(t * Math.PI * 4) * 2.4 * t;
+  return BASE_Y - hump + ripple;
 }
 
 const ROAD_D = (() => {
@@ -64,10 +68,14 @@ export function OpeningRoute({ hours }: { hours: OpeningHour[] }) {
   const status = getOpeningStatus(hours, now);
   const { dateText } = stockholmNow(now);
 
-  // Green = open-so-far (0→gp), orange = the stretch around "now" (gp→orangeEnd), dark dashes =
-  // still to come. gp is kept off the very ends so the pin and its bubble never clip.
-  const gp = route.isOpen ? Math.min(95, Math.max(5, route.progress * 100)) : 0;
-  const orangeEnd = route.isOpen ? Math.min(100, gp + 15) : 0;
+  // The road as a time journey: green = open→now (0→gp), an orange band straddling the live
+  // marker, dashed black = still to come (the base layer showing through), and a short solid black
+  // run as closing approaches (SOLID_START→100). gp is capped before SOLID_START so the pin and its
+  // bubble never reach the closing segment or clip.
+  const SOLID_START = 86;
+  const gp = route.isOpen ? Math.min(82, Math.max(5, route.progress * 100)) : 0;
+  const orangeStart = route.isOpen ? Math.max(0, gp - 4) : 0;
+  const orangeLen = route.isOpen ? Math.min(12, Math.max(0, SOLID_START - 2 - orangeStart)) : 0;
   const xPin = RX0 + (RX1 - RX0) * (gp / 100);
   const pinLeft = (xPin / VB_W) * 100;
   const pinTop = (waveY(xPin) / VB_H) * 100;
@@ -77,7 +85,10 @@ export function OpeningRoute({ hours }: { hours: OpeningHour[] }) {
     <div className="fluffy-routehours" suppressHydrationWarning>
       <div className="fluffy-route fluffy-rise">
         <p className="fluffy-eyebrow">Öppettider</p>
-        <h2 className="fluffy-route__title">Kika in när du är på väg</h2>
+        <h2 className="fluffy-route__title">
+          <span>Kika in när</span>
+          <span>du är på väg</span>
+        </h2>
 
         <div
           className="fluffy-routecard"
@@ -109,18 +120,27 @@ export function OpeningRoute({ hours }: { hours: OpeningHour[] }) {
             <span className="fluffy-routecard__road-wrap">
               <svg className="fluffy-routecard__road" viewBox={`0 0 ${VB_W} ${VB_H}`} preserveAspectRatio="none" aria-hidden="true">
                 <path className="fluffy-routecard__road-base" d={ROAD_D} pathLength={100} />
+                <path
+                  className="fluffy-routecard__road-solid"
+                  d={ROAD_D}
+                  pathLength={100}
+                  style={{ strokeDasharray: `0 ${SOLID_START} ${100 - SOLID_START} 100` }}
+                />
                 <path className="fluffy-routecard__road-green" d={ROAD_D} pathLength={100} style={{ strokeDasharray: `${gp} ${100 - gp}` }} />
                 <path
                   className="fluffy-routecard__road-orange"
                   d={ROAD_D}
                   pathLength={100}
-                  style={{ strokeDasharray: `0 ${gp} ${Math.max(0, orangeEnd - gp)} 100` }}
+                  style={{ strokeDasharray: `0 ${orangeStart} ${orangeLen} 100` }}
                 />
               </svg>
               {route.isOpen ? (
                 <span className="fluffy-routecard__pin" style={{ left: `${pinLeft}%`, top: `${pinTop}%` }}>
                   <span className="fluffy-routecard__bubble">Öppet nu</span>
-                  <MapPinIcon className="fluffy-routecard__mark" aria-hidden="true" />
+                  <svg className="fluffy-routecard__mark" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 23s7.5-7.2 7.5-13A7.5 7.5 0 1 0 4.5 10C4.5 15.8 12 23 12 23Z" />
+                    <circle cx="12" cy="9.6" r="3" />
+                  </svg>
                 </span>
               ) : null}
             </span>
@@ -154,10 +174,12 @@ export function OpeningRoute({ hours }: { hours: OpeningHour[] }) {
           <span className="fluffy-route__foot-icon" aria-hidden="true">
             <CarFrontIcon />
           </span>
-          <div>
+          <div className="fluffy-route__foot-copy">
             <p className="fluffy-route__foot-title">Mat vid vägen</p>
-            <p className="fluffy-route__foot-text">Sväng in i Laxå — ett perfekt stopp på vägen.</p>
+            <p className="fluffy-route__foot-text">Vi finns längs E20 i Laxå.</p>
+            <p className="fluffy-route__foot-text">Perfekt stopp på vägen.</p>
           </div>
+          <span className="fluffy-route__foot-mark" aria-hidden="true">Välkommen in!</span>
         </div>
       </div>
 
