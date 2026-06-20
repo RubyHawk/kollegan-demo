@@ -277,7 +277,7 @@ export default async function PublicHomePage() {
           </h2>
           <p className="fluffy-menu__lede">Något för alla smaker — bygg din favorit eller välj en klassiker.</p>
         </div>
-        <MenuBoard categories={site.categories} />
+        <MenuBoard categories={site.categories} enableOrdering={!isFallback} />
       </section>
 
       <section className="fluffy-section fluffy-section--white" id="oppettider">

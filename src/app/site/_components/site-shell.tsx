@@ -5,6 +5,7 @@ import type { PublicRestaurantSite } from '@modules/supporting/restaurant-menu';
 import { publicSiteHref } from '../_lib/public-site-data';
 import { FluffysFooter } from './site-footer';
 import { ScribbleStroke } from './scribble-stroke';
+import { HeaderCartButton } from './cart/header-cart-button';
 
 const NAV: Array<{ path: `/${string}`; label: string }> = [
   { path: '/#meny', label: 'Meny' },
@@ -54,6 +55,7 @@ export function SiteShell({
             ))}
           </nav>
           <div className="fluffy-header__actions">
+            <HeaderCartButton href={publicSiteHref(routePrefix, '/bestall')} />
             <Link href={publicSiteHref(routePrefix, '/boka')} className="fluffy-header__cta fluffy-header__cta--book">
               Boka bord
             </Link>

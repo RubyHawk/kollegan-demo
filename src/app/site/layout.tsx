@@ -10,8 +10,10 @@ import './fluffys-public-hours.css';
 import './fluffys-public-footer.css';
 import './fluffys-public-forms.css';
 import './fluffys-public-order.css';
+import './fluffys-public-cart.css';
 import type { ReactNode } from 'react';
+import { CartProvider } from './_components/cart/cart-context';
 
 export default function SiteLayout({ children }: { children: ReactNode }) {
-  return children;
+  return <CartProvider>{children}</CartProvider>;
 }

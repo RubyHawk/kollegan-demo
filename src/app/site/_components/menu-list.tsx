@@ -1,7 +1,16 @@
 import type { RestaurantMenuCategoryView, RestaurantMenuItemView } from '@modules/supporting/restaurant-menu';
+import { parseMenuVariants } from '@shared/lib/menu/menu-variants';
 import { MenuGlyph } from './menu-glyphs';
 import { MenuCategoryNav, type MenuNavCategory } from './menu-category-nav';
+import { AddToCart } from './cart/add-to-cart';
 import { categoryDisplay, menuItemParts, menuSlug, priceParts } from '../_lib/menu-visuals';
+
+// Either interactive "add" chips (when online ordering is live) or the static price.
+function MenuItemAction({ item, label, enableOrdering }: { item: RestaurantMenuItemView; label: string; enableOrdering: boolean }) {
+  const variants = enableOrdering && item.isAvailable ? parseMenuVariants(item.tags, item.priceCents) : [];
+  if (variants.length === 0) return <MenuPrice item={item} />;
+  return <AddToCart item={{ id: item.id, name: label, currency: item.currency }} variants={variants} />;
+}
 
 function MenuPrice({ item }: { item: RestaurantMenuItemView }) {
   const parts = priceParts(item);
@@ -31,7 +40,7 @@ function MenuPrice({ item }: { item: RestaurantMenuItemView }) {
   );
 }
 
-function MenuItemRow({ item }: { item: RestaurantMenuItemView }) {
+function MenuItemRow({ item, enableOrdering }: { item: RestaurantMenuItemView; enableOrdering: boolean }) {
   const { label } = menuItemParts(item.name);
   const available = item.isAvailable;
 
@@ -47,12 +56,12 @@ function MenuItemRow({ item }: { item: RestaurantMenuItemView }) {
           <p className="fluffy-item__allergens">{item.allergens.join(' · ')}</p>
         ) : null}
       </div>
-      <MenuPrice item={item} />
+      <MenuItemAction item={item} label={label} enableOrdering={enableOrdering} />
     </article>
   );
 }
 
-function FeaturedCard({ item }: { item: RestaurantMenuItemView }) {
+function FeaturedCard({ item, enableOrdering }: { item: RestaurantMenuItemView; enableOrdering: boolean }) {
   const { label } = menuItemParts(item.name);
   return (
     <article className="fluffy-pop__card">
@@ -63,13 +72,13 @@ function FeaturedCard({ item }: { item: RestaurantMenuItemView }) {
       <div className="fluffy-pop__copy">
         <h4>{label}</h4>
         {item.description ? <p>{item.description}</p> : null}
-        <MenuPrice item={item} />
+        <MenuItemAction item={item} label={label} enableOrdering={enableOrdering} />
       </div>
     </article>
   );
 }
 
-function MenuSection({ category }: { category: RestaurantMenuCategoryView }) {
+function MenuSection({ category, enableOrdering }: { category: RestaurantMenuCategoryView; enableOrdering: boolean }) {
   const display = categoryDisplay(category);
   return (
     <section id={`cat-${menuSlug(category.name)}`} className="fluffy-cat">
@@ -84,7 +93,7 @@ function MenuSection({ category }: { category: RestaurantMenuCategoryView }) {
       </header>
       <div className="fluffy-cat__items">
         {category.items.map((item) => (
-          <MenuItemRow key={item.id} item={item} />
+          <MenuItemRow key={item.id} item={item} enableOrdering={enableOrdering} />
         ))}
       </div>
     </section>
@@ -95,7 +104,7 @@ function MenuSection({ category }: { category: RestaurantMenuCategoryView }) {
  * The full menu experience: a sticky scroll-spy category nav, an optional "Populärt" row of
  * photographed items, and one always-visible section per category. Used on the homepage and /meny.
  */
-export function MenuBoard({ categories }: { categories: RestaurantMenuCategoryView[] }) {
+export function MenuBoard({ categories, enableOrdering = false }: { categories: RestaurantMenuCategoryView[]; enableOrdering?: boolean }) {
   const cats = categories.filter((category) => category.items.length > 0);
 
   if (cats.length === 0) {
@@ -129,7 +138,7 @@ export function MenuBoard({ categories }: { categories: RestaurantMenuCategoryVi
               <h3 className="fluffy-pop__title">Populärt just nu</h3>
               <div className="fluffy-pop__grid">
                 {featured.map((item) => (
-                  <FeaturedCard key={item.id} item={item} />
+                  <FeaturedCard key={item.id} item={item} enableOrdering={enableOrdering} />
                 ))}
               </div>
             </section>
@@ -137,7 +146,7 @@ export function MenuBoard({ categories }: { categories: RestaurantMenuCategoryVi
 
           <div className="fluffy-menu-cats">
             {cats.map((category) => (
-              <MenuSection key={category.id} category={category} />
+              <MenuSection key={category.id} category={category} enableOrdering={enableOrdering} />
             ))}
           </div>
         </div>
