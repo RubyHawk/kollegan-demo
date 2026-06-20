@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 280" fill="none" stroke="#090807" stroke-opacity="0.05" stroke-width="1.4">
+  <!-- faint topographic contour lines -->
+  <path d="M-20 70 C 80 40, 150 110, 250 80 S 430 30, 560 90 640 70 660 60" />
+  <path d="M-20 100 C 90 70, 160 140, 260 108 S 440 60, 580 118 660 96" />
+  <path d="M-20 150 C 70 130, 170 190, 280 156 S 470 110, 600 170" />
+  <path d="M-20 200 C 110 175, 200 235, 320 200 S 500 160, 640 215" />
+  <path d="M-20 245 C 90 225, 210 280, 340 246 S 520 210, 660 260" />
+  <!-- a couple of crossing "roads" -->
+  <path d="M40 -20 C 120 80, 180 160, 300 300" stroke-dasharray="7 9" />
+  <path d="M520 -20 C 440 90, 380 170, 300 300" stroke-dasharray="7 9" />
+  <!-- compass rose, top-right -->
+  <g transform="translate(508 64)" stroke-opacity="0.07">
+    <circle r="34" />
+    <circle r="23" />
+    <path d="M0 -40 L8 0 L0 40 L-8 0 Z" fill="#090807" fill-opacity="0.05" stroke="none" />
+    <path d="M-40 0 L0 -8 L40 0 L0 8 Z" fill="#090807" fill-opacity="0.03" stroke="none" />
+  </g>
+</svg>

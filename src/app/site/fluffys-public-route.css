@@ -19,12 +19,19 @@
 }
 
 .fluffy-route__title {
-  margin: 6px 0 20px;
+  margin: 6px 0 22px;
   color: var(--fp-ink);
   font-family: var(--fluffy-display-font);
-  font-size: clamp(2.1rem, 4vw, 3.2rem);
-  line-height: 0.92;
+  font-size: clamp(2.6rem, 6vw, 4.4rem);
+  line-height: 0.96;
+  letter-spacing: -0.01em;
   text-transform: uppercase;
+  /* light highlight + soft ink drop = printed roadside-sign feel */
+  text-shadow: 0 1px 0 rgba(255, 250, 240, 0.55), 0 3px 0 rgba(9, 8, 7, 0.08);
+}
+
+.fluffy-route__title span {
+  display: block;
 }
 
 /* ---- the map card ---- */
@@ -32,13 +39,40 @@
   position: relative;
   overflow: hidden;
   border: 2px solid var(--fp-ink);
-  border-radius: 18px;
+  /* uneven corners so it reads hand-cut, not a perfect web card */
+  border-radius: 20px 16px 22px 17px / 17px 22px 16px 20px;
   background:
+    /* fine ink/print grain, multiplied over the paper */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.38'/%3E%3C/svg%3E"),
     radial-gradient(circle at 16px 16px, rgba(9, 8, 7, 0.04) 0 1px, transparent 1.6px),
     linear-gradient(180deg, #fbf2e0, #f6ead4);
-  background-size: 26px 26px, auto;
-  box-shadow: var(--fp-shadow-soft);
-  padding: 28px 32px 24px;
+  background-size: 180px 180px, 26px 26px, auto;
+  background-blend-mode: multiply, normal, normal;
+  /* deeper, longer paper shadow + faint inner edge */
+  box-shadow: var(--fp-shadow-card), 0 42px 56px -34px rgba(9, 8, 7, 0.4), inset 0 0 0 1px rgba(9, 8, 7, 0.05);
+  padding: 30px 32px 24px;
+}
+
+/* faint roadside map / contour linework behind the route */
+.fluffy-routecard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: url("/fluffys/route-map.svg") center / cover no-repeat;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* premium ticket detail: a faint dashed inner border just inside the cut edge */
+.fluffy-routecard::after {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  z-index: 0;
+  border: 1px dashed rgba(9, 8, 7, 0.14);
+  border-radius: 14px 12px 16px 13px / 13px 16px 12px 14px;
+  pointer-events: none;
 }
 
 .fluffy-routecard__compass {
@@ -64,7 +98,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 122px;
+  min-height: 134px;
 }
 
 .fluffy-routecard__end {
@@ -115,20 +149,27 @@
   stroke-linejoin: round;
 }
 
+/* base = the "still to come" road: black dashes that show through after the marker */
 .fluffy-routecard__road-base {
-  stroke: rgba(9, 8, 7, 0.82);
-  stroke-width: 6;
-  stroke-dasharray: 2.4 5.2;
+  stroke: rgba(9, 8, 7, 0.88);
+  stroke-width: 5.5;
+  stroke-dasharray: 9 8;
+}
+
+/* a short solid black run as closing approaches */
+.fluffy-routecard__road-solid {
+  stroke: rgba(9, 8, 7, 0.92);
+  stroke-width: 7;
 }
 
 .fluffy-routecard__road-green {
   stroke: #1f7a46;
-  stroke-width: 7.5;
+  stroke-width: 8;
 }
 
 .fluffy-routecard__road-orange {
   stroke: var(--fp-orange);
-  stroke-width: 7.5;
+  stroke-width: 8.5;
 }
 
 /* the live pin (HTML overlay → crisp at any card width) */
@@ -138,7 +179,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 2px;
   pointer-events: none;
 }
 
@@ -166,11 +207,20 @@
 }
 
 .fluffy-routecard__mark {
-  width: 28px;
-  height: 28px;
-  color: var(--fp-orange-dark);
+  width: 42px;
+  height: 42px;
+  filter: drop-shadow(0 6px 7px rgba(9, 8, 7, 0.3));
+}
+
+.fluffy-routecard__mark path {
   fill: var(--fp-orange);
-  stroke-width: 1.6;
+  stroke: var(--fp-orange-dark);
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+}
+
+.fluffy-routecard__mark circle {
+  fill: var(--fp-white);
 }
 
 /* the "you are here" dot sitting on the road under the pin */
@@ -276,39 +326,71 @@
 .fluffy-route__foot {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-top: 22px;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 26px;
 }
 
 .fluffy-route__foot-icon {
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  width: 46px;
-  height: 46px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
-  border: 2px solid rgba(9, 8, 7, 0.16);
+  border: 2px solid rgba(9, 8, 7, 0.2);
+  background: var(--fp-paper-strong);
   color: #1f7a46;
+  box-shadow: 0 4px 10px rgba(9, 8, 7, 0.1);
 }
 
 .fluffy-route__foot-icon svg {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
+}
+
+.fluffy-route__foot-copy {
+  min-width: 0;
 }
 
 .fluffy-route__foot-title {
   margin: 0;
   color: #1f7a46;
   font-family: var(--fluffy-display-font);
-  font-size: 0.92rem;
-  letter-spacing: 0.04em;
+  font-size: 1.04rem;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .fluffy-route__foot-text {
   margin: 2px 0 0;
-  color: rgba(9, 8, 7, 0.66);
-  font-size: 0.92rem;
+  color: rgba(9, 8, 7, 0.7);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+/* handwritten-style brand sign-off (Instrument Serif italic — closest in-house script feel) */
+.fluffy-route__foot-mark {
+  margin-left: auto;
+  padding-left: 18px;
+  border-left: 2px dotted rgba(9, 8, 7, 0.2);
+  color: var(--fp-orange-dark);
+  font-family: var(--font-instrument-serif), Georgia, serif;
+  font-style: italic;
+  font-size: 1.65rem;
+  line-height: 1;
+  white-space: nowrap;
+  transform: rotate(-3deg);
+}
+
+@media (max-width: 560px) {
+  .fluffy-route__foot-mark {
+    width: 100%;
+    margin-left: 0;
+    padding-left: 0;
+    border-left: 0;
+    text-align: center;
+  }
 }
 
 /* ===================================================================================== */
@@ -317,35 +399,44 @@
 .fluffy-receipt {
   position: relative;
   justify-self: center;
-  filter: drop-shadow(0 22px 30px rgba(9, 8, 7, 0.2));
+  /* a slight tilt + deeper shadow so it reads as a real slip of paper */
+  transform: rotate(1.3deg);
+  filter: drop-shadow(0 26px 38px rgba(9, 8, 7, 0.28));
 }
 
 .fluffy-receipt__tape {
   position: absolute;
   z-index: 2;
-  top: -13px;
+  top: -15px;
   left: 50%;
-  width: 126px;
-  height: 30px;
-  transform: translateX(-50%) rotate(-3deg);
-  background: linear-gradient(105deg, rgba(214, 188, 140, 0.55), rgba(236, 214, 170, 0.78));
-  box-shadow: 0 3px 7px rgba(9, 8, 7, 0.12);
-  border-left: 1px dashed rgba(255, 255, 255, 0.5);
-  border-right: 1px dashed rgba(255, 255, 255, 0.5);
+  width: 138px;
+  height: 34px;
+  transform: translateX(-50%) rotate(-3.5deg);
+  /* woven, more opaque masking tape */
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 7px),
+    repeating-linear-gradient(0deg, rgba(160, 130, 80, 0.16) 0 1px, transparent 1px 5px),
+    linear-gradient(105deg, rgba(206, 178, 126, 0.82), rgba(232, 208, 160, 0.92));
+  box-shadow: 0 4px 9px rgba(9, 8, 7, 0.18);
+  border-left: 1px dashed rgba(255, 255, 255, 0.55);
+  border-right: 1px dashed rgba(255, 255, 255, 0.55);
 }
 
 .fluffy-receipt__paper {
   position: relative;
   width: min(332px, 86vw);
-  padding: 26px 24px 32px;
+  padding: 26px 24px 40px;
   color: #241d12;
   background: linear-gradient(180deg, #fffdf6, #f3ecdd);
   font-family: var(--font-mono), ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  /* faint ink bleed for a printed look */
+  text-shadow: 0 0.4px 0 rgba(36, 29, 18, 0.28);
+  /* deeper, slightly irregular torn bottom edge */
   clip-path: polygon(
-    0 0, 100% 0, 100% 98.8%,
-    96% 100%, 92% 98.9%, 88% 100%, 84% 98.9%, 80% 100%, 76% 98.9%, 72% 100%, 68% 98.9%,
-    64% 100%, 60% 98.9%, 56% 100%, 52% 98.9%, 48% 100%, 44% 98.9%, 40% 100%, 36% 98.9%,
-    32% 100%, 28% 98.9%, 24% 100%, 20% 98.9%, 16% 100%, 12% 98.9%, 8% 100%, 4% 98.9%, 0 100%
+    0 0, 100% 0, 100% 96.8%,
+    96% 100%, 92% 96.4%, 88% 100%, 84% 97%, 80% 100%, 76% 96.4%, 72% 100%, 68% 96.8%,
+    64% 100%, 60% 96.4%, 56% 100%, 52% 97%, 48% 100%, 44% 96.4%, 40% 100%, 36% 96.8%,
+    32% 100%, 28% 96.4%, 24% 100%, 20% 97%, 16% 100%, 12% 96.4%, 8% 100%, 4% 96.8%, 0 100%
   );
 }
 
@@ -394,11 +485,18 @@
   z-index: 1;
 }
 
+/* hand-printed leader: two slightly offset dot rows so the line looks uneven, not laser-straight */
 .fluffy-receipt__dots {
   flex: 1;
   align-self: center;
-  border-bottom: 2px dotted rgba(36, 29, 18, 0.42);
+  height: 0.7em;
   margin: 0 7px;
+  background-image:
+    radial-gradient(circle, rgba(36, 29, 18, 0.5) 0.9px, transparent 1.2px),
+    radial-gradient(circle, rgba(36, 29, 18, 0.3) 0.7px, transparent 1px);
+  background-size: 7px 100%, 9px 100%;
+  background-position: 0 78%, 3px 84%;
+  background-repeat: repeat-x;
 }
 
 .fluffy-receipt__row[data-closed] > span:last-child {
