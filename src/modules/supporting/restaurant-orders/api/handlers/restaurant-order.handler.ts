@@ -105,6 +105,7 @@ const CreatePublicOrderSchema = z.object({
   customerPhone: z.string().min(5).max(40),
   deliveryAddress: z.string().max(400).nullable().optional(),
   note: z.string().max(1000).nullable().optional(),
+  payment: z.enum(['arrival', 'card', 'swish']).optional(),
   items: z.array(PublicOrderItemSchema).min(1).max(80),
 });
 
@@ -240,6 +241,11 @@ export const handleCreatePublicRestaurantOrder = createHandler(
     rateLimit: { max: 20, windowMs: 60_000 },
     body: CreatePublicOrderSchema,
   },
-  async ({ req, body }) =>
-    created({ order: await createPublicRestaurantOrder(req.headers.get('host'), body!) }, '/api/v1/public-site/orders'),
+  async ({ req, body }) => {
+    const origin = new URL(req.url).origin;
+    return created(
+      { order: await createPublicRestaurantOrder(req.headers.get('host'), body!, origin) },
+      '/api/v1/public-site/orders',
+    );
+  },
 );

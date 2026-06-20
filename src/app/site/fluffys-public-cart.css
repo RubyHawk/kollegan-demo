@@ -1,0 +1,159 @@
+/* Customer ordering cart: the "add" chips that replace the static price on orderable menu rows, the
+   header mini-cart pill, and the /bestall checkout states. Bare .fluffy-* selectors + --fp-* tokens. */
+
+/* ── Add-to-cart chips (menu rows) ─────────────────────────────────────────── */
+.fluffy-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.fluffy-add__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 38px;
+  padding: 5px 11px;
+  border: 1.5px solid var(--fp-line-strong);
+  border-radius: 999px;
+  background: var(--fp-white);
+  color: var(--fp-ink);
+  font: inherit;
+  font-weight: 850;
+  font-size: 0.86rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 140ms var(--fp-ease, ease), background 140ms var(--fp-ease, ease),
+    transform 140ms var(--fp-ease, ease);
+}
+
+.fluffy-add__btn:hover {
+  border-color: var(--fp-orange);
+}
+
+.fluffy-add__btn:active {
+  transform: translateY(1px);
+}
+
+.fluffy-add__btn:focus-visible {
+  outline: none;
+  border-color: var(--fp-purple);
+  box-shadow: 0 0 0 3px rgba(242, 140, 0, 0.34);
+}
+
+.fluffy-add__btn[data-incart] {
+  border-color: var(--fp-orange);
+  background: rgba(242, 140, 0, 0.13);
+}
+
+.fluffy-add__size {
+  font-family: var(--fluffy-display-font);
+  font-weight: 950;
+}
+
+.fluffy-add__price {
+  color: var(--fp-red);
+  font-family: var(--fluffy-display-font);
+  font-weight: 950;
+}
+
+.fluffy-add__plus {
+  width: 15px;
+  height: 15px;
+  color: var(--fp-orange-dark);
+}
+
+.fluffy-add__count {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--fp-orange-dark);
+  font-weight: 950;
+}
+
+.fluffy-add__count svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* ── Header mini-cart pill ─────────────────────────────────────────────────── */
+.fluffy-header__cta--cart {
+  gap: 7px;
+  padding: 0 14px;
+  background: var(--fp-ink);
+  border-color: var(--fp-ink);
+  color: var(--fp-white);
+}
+
+.fluffy-header__cta--cart:hover,
+.fluffy-header__cta--cart:focus-visible {
+  background: #000;
+  border-color: #000;
+  color: var(--fp-white);
+}
+
+.fluffy-header__cart-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--fp-orange);
+  color: var(--fp-ink);
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+.fluffy-header__cart-sum {
+  font-size: 0.86rem;
+}
+
+/* ── Checkout (/bestall) ───────────────────────────────────────────────────── */
+.fluffy-cart-panel--checkout {
+  position: static;
+  max-width: 560px;
+}
+
+.fluffy-cart-empty-card {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  max-width: 520px;
+  padding: 28px;
+}
+
+.fluffy-cart-empty-card h2 {
+  margin: 0;
+  color: var(--fp-ink);
+  font-family: var(--fluffy-display-font);
+  font-size: 1.5rem;
+  text-transform: uppercase;
+}
+
+.fluffy-cart-empty-card p {
+  margin: 0;
+  color: var(--fp-ink-soft);
+}
+
+.fluffy-cart-empty-card .fluffy-button {
+  margin-top: 6px;
+}
+
+/* Payment-method selector (pay on arrival / card / Swish) — up to three options, so flex-wrap. */
+.fluffy-pay {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.fluffy-pay button {
+  flex: 1 1 auto;
+  min-width: 96px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fluffy-add__btn {
+    transition: none;
+  }
+}

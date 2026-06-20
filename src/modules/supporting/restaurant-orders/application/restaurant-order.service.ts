@@ -19,6 +19,8 @@ import {
 } from '../domain/restaurant-order.entity';
 import { resolvePublicRestaurantOrganization } from '@modules/supporting/restaurant-menu';
 import { restaurantOrderRepository } from '../infrastructure/restaurant-order.repository';
+import { createOnlinePayment, type OnlinePaymentResult } from './payment/payment.service';
+import { isProviderEnabled } from './payment/payment-config';
 
 const TAG = 'RestaurantOrderService';
 const RESTAURANT_TIME_ZONE = 'Europe/Stockholm';
@@ -216,6 +218,7 @@ export async function createRestaurantOrder(
 export async function createPublicRestaurantOrder(
   host: string | null | undefined,
   input: CreatePublicRestaurantOrderInput,
+  origin?: string | null,
 ) {
   const organizationId = await resolvePublicRestaurantOrganization(host);
   // Public online ordering is part of the public site: require it to be enabled (mirrors the public
@@ -245,6 +248,13 @@ export async function createPublicRestaurantOrder(
 
   const currency = menuItems.find((item) => item.currency)?.currency ?? 'SEK';
   const totals = calculateOrderTotals(items, currency);
+
+  // Card/Swish orders are created HELD (parked) so an abandoned online payment never becomes a live
+  // kitchen order. The webhook un-holds the order when payment is confirmed; if payment can't even be
+  // started we release the hold below so it falls back to a normal pay-on-arrival order.
+  const choice = input.payment ?? 'arrival';
+  const onlinePayment = choice === 'card' || choice === 'swish';
+
   const order = await restaurantOrderRepository.createOrder(organizationId, businessDay.id, null, {
     source: 'public',
     fulfillmentType: input.fulfillmentType,
@@ -254,6 +264,7 @@ export async function createPublicRestaurantOrder(
     note: cleanText(input.note),
     paymentStatus: 'unpaid',
     paymentMethod: null,
+    isHeld: onlinePayment,
     items,
     totals,
   });
@@ -261,8 +272,53 @@ export async function createPublicRestaurantOrder(
     organizationId,
     orderId: order.id,
     fulfillmentType: order.fulfillmentType,
+    held: onlinePayment,
   });
-  return { orderNumber: order.orderNumber, status: order.status, fulfillmentType: order.fulfillmentType };
+
+  // Optional online payment. The order already exists (unpaid, held); if starting the provider payment
+  // fails we release the hold and fall back to pay-on-arrival rather than erroring (avoids duplicate
+  // orders from a retry). The webhook marks it paid and un-holds it once the provider confirms.
+  let payment: OnlinePaymentResult | undefined;
+  let paymentError = false;
+  if (onlinePayment) {
+    if (origin && isProviderEnabled(choice)) {
+      try {
+        payment = await createOnlinePayment({
+          order: {
+            id: order.id,
+            orderNumber: order.orderNumber,
+            currency: order.currency,
+            totalCents: order.totalCents,
+            customerPhone: order.customerPhone ?? null,
+            items: order.items.map((item) => ({ name: item.name, quantity: item.quantity, unitPriceCents: item.unitPriceCents })),
+          },
+          provider: choice,
+          origin,
+        });
+      } catch (err) {
+        paymentError = true;
+        logger.error(TAG, 'Online payment init failed; order kept as pay-on-arrival', {
+          organizationId,
+          orderId: order.id,
+          provider: choice,
+          error: (err as Error).message,
+        });
+      }
+    } else {
+      paymentError = true;
+    }
+    if (paymentError) {
+      await restaurantOrderRepository.releaseHeldPublicOrder(order.id);
+    }
+  }
+
+  return {
+    orderNumber: order.orderNumber,
+    status: order.status,
+    fulfillmentType: order.fulfillmentType,
+    payment,
+    paymentError,
+  };
 }
 
 export async function updateRestaurantOrder(

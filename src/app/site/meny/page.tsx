@@ -34,7 +34,7 @@ export default async function PublicMenuPage() {
       </section>
 
       <div className="fluffy-menu fluffy-menu--page" id="meny">
-        <MenuBoard categories={site.categories} />
+        <MenuBoard categories={site.categories} enableOrdering={!isFallback} />
       </div>
 
       <div className="fluffy-mobile-actions" aria-label="Snabbval">

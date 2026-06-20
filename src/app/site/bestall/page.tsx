@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { ArrowRightIcon, PhoneIcon } from 'lucide-react';
+import { availableOnlineProviders } from '@modules/supporting/restaurant-orders';
 import { SiteShell } from '../_components/site-shell';
-import { OrderCart, type OrderMenuCategory } from '../_components/order-cart';
+import { Checkout } from '../_components/cart/checkout';
 import { getPublicSiteRoutePrefix, getSiteData, publicSiteHref, siteMetadata } from '../_lib/public-site-data';
-import { isOrderableMenuItem, parseMenuVariants } from '@shared/lib/menu/menu-variants';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,36 +16,14 @@ function telHref(phone: string | null) {
   return normalized ? `tel:${normalized}` : null;
 }
 
-// Build the orderable menu from live data: only available items that resolve to at least one priced
-// variant (parsed from the menu row's tags/priceCents). The browser never supplies prices — the
-// order endpoint re-derives them from the same menu row.
-function buildOrderMenu(categories: Awaited<ReturnType<typeof getSiteData>>['site']['categories']): OrderMenuCategory[] {
-  return categories
-    .map((category) => ({
-      id: category.id,
-      name: category.name,
-      items: category.items
-        .filter((item) => isOrderableMenuItem({ tags: item.tags, priceCents: item.priceCents, isAvailable: item.isAvailable }))
-        .map((item) => ({
-          id: item.id,
-          name: item.name,
-          description: item.description,
-          currency: item.currency,
-          variants: parseMenuVariants(item.tags, item.priceCents),
-        })),
-    }))
-    .filter((category) => category.items.length > 0);
-}
-
 export default async function PublicOrderPage() {
   const { site, isFallback } = await getSiteData();
   const routePrefix = await getPublicSiteRoutePrefix();
   const callHref = telHref(site.settings.phone);
 
-  // Online ordering needs real, uuid-keyed menu items; the demo/outage fallback can't be ordered, so
-  // we fall back to call-to-order there.
-  const orderMenu = isFallback ? [] : buildOrderMenu(site.categories);
-  const canOrderOnline = orderMenu.length > 0;
+  // Online ordering needs the live, uuid-keyed menu; the demo/outage fallback can't be ordered, so we
+  // fall back to call-to-order there. The cart itself is built up on the menu pages and reviewed here.
+  const canOrderOnline = !isFallback;
 
   return (
     <SiteShell site={site} isFallback={isFallback} routePrefix={routePrefix}>
@@ -55,7 +33,7 @@ export default async function PublicOrderPage() {
           <h1 className="fluffy-page-title">Avhämtning &amp; leverans</h1>
           <p>
             {canOrderOnline
-              ? 'Bygg din beställning, välj avhämtning eller hemleverans och skicka — du betalar när maten kommer.'
+              ? 'Granska din beställning, välj avhämtning eller hemleverans och skicka — du betalar när maten kommer.'
               : 'Ring in din beställning för avhämtning eller leverans.'}{' '}
             Vill du boka bord istället? Det gör du under{' '}
             <Link className="fluffy-link" href={publicSiteHref(routePrefix, '/boka')}>Boka bord</Link>.
@@ -66,7 +44,12 @@ export default async function PublicOrderPage() {
       <section className="fluffy-section fluffy-section--white">
         <div className="fluffy-shell">
           {canOrderOnline ? (
-            <OrderCart menu={orderMenu} phone={site.settings.phone} />
+            <Checkout
+              phone={site.settings.phone}
+              menuHref={publicSiteHref(routePrefix, '/meny')}
+              confirmHref={publicSiteHref(routePrefix, '/bestall/klar')}
+              providers={availableOnlineProviders()}
+            />
           ) : (
             <article className="fluffy-card fluffy-order-card fluffy-rise">
               <h2>Ring &amp; beställ</h2>

@@ -5,6 +5,7 @@ export const RESTAURANT_PAYMENT_STATUSES = ['unpaid', 'paid', 'refunded'] as con
 export const RESTAURANT_PAYMENT_METHODS = ['cash', 'card', 'swish', 'other'] as const;
 export const RESTAURANT_FULFILLMENT_TYPES = ['takeaway', 'dine_in', 'counter', 'booking_linked', 'delivery'] as const;
 export const PUBLIC_FULFILLMENT_TYPES = ['takeaway', 'delivery'] as const;
+export const PUBLIC_PAYMENT_CHOICES = ['arrival', 'card', 'swish'] as const;
 export const RESTAURANT_KOT_STATUSES = ['not_sent', 'sent', 'printed'] as const;
 
 export type RestaurantOrderStatus = (typeof RESTAURANT_ORDER_STATUSES)[number];
@@ -12,6 +13,7 @@ export type RestaurantPaymentStatus = (typeof RESTAURANT_PAYMENT_STATUSES)[numbe
 export type RestaurantPaymentMethod = (typeof RESTAURANT_PAYMENT_METHODS)[number];
 export type RestaurantFulfillmentType = (typeof RESTAURANT_FULFILLMENT_TYPES)[number];
 export type PublicFulfillmentType = (typeof PUBLIC_FULFILLMENT_TYPES)[number];
+export type PublicPaymentChoice = (typeof PUBLIC_PAYMENT_CHOICES)[number];
 export type RestaurantKotStatus = (typeof RESTAURANT_KOT_STATUSES)[number];
 export type RestaurantOrderSource = 'portal' | 'public';
 export type RestaurantBusinessDayStatus = 'open' | 'closed';
@@ -197,6 +199,8 @@ export interface CreatePublicRestaurantOrderInput {
   customerPhone: string;
   deliveryAddress?: string | null;
   note?: string | null;
+  /** How the customer pays. 'arrival' (default) keeps pay-on-pickup/delivery; 'card'/'swish' start an online payment. */
+  payment?: PublicPaymentChoice;
   items: CreateRestaurantOrderItemInput[];
 }
 

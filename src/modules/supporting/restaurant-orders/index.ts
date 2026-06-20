@@ -5,6 +5,7 @@ export type {
   CreateRestaurantOrderItemInput,
   ListRestaurantOrdersInput,
   PublicFulfillmentType,
+  PublicPaymentChoice,
   RestaurantBusinessDayStatus,
   RestaurantBusinessDayView,
   RestaurantFulfillmentType,
@@ -23,6 +24,7 @@ export type {
 } from './domain/restaurant-order.entity';
 export {
   PUBLIC_FULFILLMENT_TYPES,
+  PUBLIC_PAYMENT_CHOICES,
   RESTAURANT_KOT_STATUSES,
   RESTAURANT_FULFILLMENT_TYPES,
   RESTAURANT_ORDER_STATUSES,
@@ -55,3 +57,6 @@ export {
   handleStartBusinessDay,
   handleUpdateRestaurantOrder,
 } from './api/handlers/restaurant-order.handler';
+export { handleStripeWebhook, handleSwishWebhook } from './api/handlers/payment-webhook.handler';
+export { availableOnlineProviders, onlinePaymentEnabled } from './application/payment/payment-config';
+export type { OnlinePaymentProvider } from './application/payment/payment-config';
