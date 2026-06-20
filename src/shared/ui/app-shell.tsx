@@ -9,6 +9,7 @@ import { MenuIcon, ChevronRightIcon, PlusIcon } from '@shared/ui/icons';
 import { SearchTrigger } from '@shared/ui/search-command';
 import { BrandLockup, OrgBrandMark } from '@shared/ui/brand';
 import { logout } from '@shared/lib/api/auth-account.api';
+import { cn } from '@shared/lib/utils';
 import { NAV_CRUMB_MAP, NAV_CONFIG, getNavConfigForModules, type ShellBrand, type User } from '@shared/ui/sidebar-config';
 
 // ─── Breadcrumbs ──────────────────────────────────────────────────────────────
@@ -101,7 +102,12 @@ export default function AppShell({ user, children, enabledModules = [], brand }:
   const isImmersiveTemplateEditor = pathname.startsWith('/mallar/') && pathname !== '/mallar';
 
   const topbar = (
-    <div className="glass-header hidden h-14 shrink-0 items-center justify-between border-b border-[var(--ui-border)] px-5 md:flex">
+    <div
+      className={cn(
+        'glass-header hidden h-14 shrink-0 items-center justify-between border-b border-[var(--ui-border)] px-5 md:flex',
+        brand?.key === 'fluffys' && 'fluffy-portal-topbar',
+      )}
+    >
       <nav aria-label="Breadcrumb" className="flex items-center gap-1">
         {crumbs.map((crumb, i) => (
           <span key={i} className="flex items-center gap-1">
@@ -142,7 +148,13 @@ export default function AppShell({ user, children, enabledModules = [], brand }:
   );
 
   return (
-    <div data-brand={brand?.key} className="flex h-dvh overflow-hidden bg-[var(--ui-bg)]">
+    <div
+      data-brand={brand?.key}
+      className={cn(
+        'flex h-dvh overflow-hidden bg-[var(--ui-bg)]',
+        brand?.key === 'fluffys' && 'fluffy-portal-shell',
+      )}
+    >
       <div className="hidden h-full md:flex">
         <Sidebar
           user={user}
@@ -175,7 +187,12 @@ export default function AppShell({ user, children, enabledModules = [], brand }:
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {!isImmersiveTemplateEditor && (
-          <div className="glass-header flex items-center gap-3 border-b border-[var(--ui-border)] px-4 py-3 md:hidden">
+          <div
+            className={cn(
+              'glass-header flex items-center gap-3 border-b border-[var(--ui-border)] px-4 py-3 md:hidden',
+              brand?.key === 'fluffys' && 'fluffy-portal-topbar',
+            )}
+          >
             <button
               onClick={() => setMobileOpen(true)}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--ui-text-secondary)] transition-colors hover:bg-[var(--ui-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
@@ -196,7 +213,7 @@ export default function AppShell({ user, children, enabledModules = [], brand }:
 
         {!isImmersiveTemplateEditor && topbar}
 
-        <main className="scrollbar-none flex-1 overflow-y-auto">
+        <main className={cn('scrollbar-none flex-1 overflow-y-auto', brand?.key === 'fluffys' && 'fluffy-portal-main')}>
           {children}
         </main>
       </div>

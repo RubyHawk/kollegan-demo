@@ -144,7 +144,7 @@ export function KitchenOrdersClient({
   }
 
   return (
-    <div data-brand="fluffys" className="space-y-5 p-4 md:p-6">
+    <div data-brand="fluffys" className="fluffy-portal-page space-y-5 p-4 md:p-6">
       <PageHeader
         eyebrow="Fluffy's"
         title="Kök"
@@ -174,8 +174,8 @@ export function KitchenOrdersClient({
         {COLUMNS.map((column) => {
           const columnOrders = activeOrders.filter((order) => order.status === column.status);
           return (
-            <Panel key={column.status} padding="none" className="overflow-hidden">
-              <div className="border-b border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-4 py-3">
+            <Panel key={column.status} padding="none" className="fluffy-kitchen-column overflow-hidden">
+              <div className="fluffy-kitchen-column__head border-b border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-4 py-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <h2 className="text-sm font-semibold text-[var(--ui-text)]">{column.title}</h2>
@@ -193,7 +193,7 @@ export function KitchenOrdersClient({
               ) : (
                 <div className="divide-y divide-[var(--ui-border)]">
                   {columnOrders.map((order) => (
-                    <article key={order.id} className="space-y-3 p-4">
+                    <article key={order.id} className="fluffy-kitchen-ticket space-y-3 p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">

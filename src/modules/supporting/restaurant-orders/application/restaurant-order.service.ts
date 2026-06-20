@@ -12,7 +12,9 @@ import {
   type CreateRestaurantOrderInput,
   type CreateRestaurantOrderItemInput,
   type ListRestaurantOrdersInput,
+  type NormalizedOrderItem,
   type RestaurantOrderSummary,
+  type RestaurantOrderTotals,
   type RestaurantOrderView,
   type StartBusinessDayInput,
   type UpdateRestaurantOrderInput,
@@ -162,13 +164,16 @@ export async function createRestaurantOrder(
   organizationId: string,
   actorId: string,
   input: CreateRestaurantOrderInput,
-  options: { canMarkPaid: boolean },
+  options: { canMarkPaid: boolean; canAdmin?: boolean },
 ): Promise<RestaurantOrderView> {
   await requireOrdersModule(organizationId);
   const businessDay = await restaurantOrderRepository.getOpenBusinessDay(organizationId);
   if (!businessDay) throw Errors.conflict('Starta dagen innan du tar första ordern.');
   if (input.paymentStatus === 'paid' && !options.canMarkPaid) {
     throw Errors.forbidden('Du får inte markera betalning.');
+  }
+  if ((input.discountCents ?? 0) > 0 && !options.canAdmin) {
+    throw Errors.forbidden('Endast ansvarig kan ge rabatt.');
   }
 
   const menuItems = await restaurantOrderRepository.findMenuItemsByIds(organizationId, collectMenuItemIds(input));
@@ -338,6 +343,9 @@ export async function updateRestaurantOrder(
       throw Errors.forbidden('Endast ansvarig kan markera återbetalning.');
     }
   }
+  if ((input.discountCents ?? 0) > 0 && !options.canAdmin) {
+    throw Errors.forbidden('Endast ansvarig kan ge rabatt.');
+  }
 
   if (input.status !== undefined) {
     if (input.status === 'cancelled' && !options.canAdmin) {
@@ -358,6 +366,27 @@ export async function updateRestaurantOrder(
     }
   }
 
+  let replacementItems: NormalizedOrderItem[] | undefined;
+  let replacementTotals: RestaurantOrderTotals | undefined;
+  if (input.items !== undefined) {
+    if (!existing.isHeld || (existing.kotStatus ?? 'not_sent') !== 'not_sent') {
+      throw Errors.conflict('Endast parkerade ordrar som inte skickats till köket kan ändras i kassan.');
+    }
+    const menuItems = await restaurantOrderRepository.findMenuItemsByIds(organizationId, collectMenuItemIds({ items: input.items }));
+    const menuMap = new Map(menuItems.map((item) => [item.id, item]));
+    try {
+      replacementItems = normalizeOrderItems(input.items, menuMap);
+    } catch (err) {
+      throw Errors.validation((err as Error).message);
+    }
+    if (replacementItems.length === 0) throw Errors.validation('Ordern behöver minst en rad.');
+    const currency = menuItems.find((item) => item.currency)?.currency ?? existing.currency;
+    replacementTotals = calculateOrderTotals(replacementItems, currency, {
+      discountCents: input.discountCents ?? existing.discountCents ?? 0,
+      taxRateBps: input.taxRateBps ?? existing.taxRateBps ?? 1200,
+    });
+  }
+
   const updated = await restaurantOrderRepository.updateOrder(organizationId, orderId, actorId, {
     ...input,
     customerName: input.customerName !== undefined ? cleanText(input.customerName) : undefined,
@@ -365,6 +394,8 @@ export async function updateRestaurantOrder(
     bookingReference: input.bookingReference !== undefined ? cleanText(input.bookingReference) : undefined,
     note: input.note !== undefined ? cleanText(input.note) : undefined,
     isHeld: input.kotStatus === 'sent' || input.kotStatus === 'printed' || input.printReceipt ? false : input.isHeld,
+    items: replacementItems,
+    totals: replacementTotals,
   });
   if (!updated) throw Errors.notFound('Restaurant order');
   logger.info(TAG, 'Restaurant order updated', { organizationId, actorId, orderId });
