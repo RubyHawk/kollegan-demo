@@ -69,8 +69,12 @@ describe('getOpeningStatus', () => {
     const overnight: OpeningHour[] = [hour(5, '18:00', '02:00'), hour(6, '18:00', '02:00')];
     const s = getOpeningStatus(overnight, new Date('2026-06-19T22:30:00Z')); // Sat 00:30 Stockholm
     expect(s.isOpen).toBe(true);
+    expect(s.opensAtText).toBe('18:00');
     expect(s.closesAtText).toBe('02:00');
     expect(s.minutesUntilClose).toBe(90);
+    // progress tracks Friday's 18:00→02:00 window, not today's record
+    expect(s.progress).toBeGreaterThan(0);
+    expect(s.progress).toBeLessThan(1);
   });
 
   it('reports no hours gracefully', () => {
@@ -149,5 +153,16 @@ describe('getRouteStrip', () => {
     expect(r.hasHours).toBe(false);
     expect(r.bigValue).toBe('—');
     expect(r.closeLine).toBe('Öppettider uppdateras');
+  });
+
+  it('follows the active overnight window, not today’s record (Fri 18:00–02:00, Sat closed)', () => {
+    const overnight: OpeningHour[] = [hour(5, '18:00', '02:00'), hour(6, null, null, true, 'Closed')];
+    const r = getRouteStrip(overnight, new Date('2026-06-19T22:30:00Z')); // Sat 00:30 Stockholm
+    expect(r.phase).toBe('open');
+    expect(r.isOpen).toBe(true);
+    expect(r.openText).toBe('18:00');
+    expect(r.closeText).toBe('02:00');
+    expect(r.progress).toBeGreaterThan(0);
+    expect(r.progress).toBeLessThan(1);
   });
 });

@@ -7,6 +7,7 @@ import './fluffys-public-collage.css';
 import './fluffys-public-menu.css';
 import './fluffys-public-menu-responsive.css';
 import './fluffys-public-hours.css';
+import './fluffys-public-route.css';
 import './fluffys-public-footer.css';
 import './fluffys-public-forms.css';
 import './fluffys-public-order.css';

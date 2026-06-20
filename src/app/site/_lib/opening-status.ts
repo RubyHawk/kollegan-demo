@@ -114,11 +114,13 @@ export type OpeningStatus = {
   isOpen: boolean;
   /** today's raw record (for rendering today's hours / closed label) */
   today: OpeningHour | null;
+  /** the active window's opening time, e.g. "18:00" — yesterday's when open via an overnight spill */
+  opensAtText: string | null;
   /** "22:00" when currently open */
   closesAtText: string | null;
   /** minutes left until close, when open */
   minutesUntilClose: number | null;
-  /** 0..1 position within today's open window, when open */
+  /** 0..1 position within the active open window, when open */
   progress: number | null;
   /** about to close within the next hour */
   closingSoon: boolean;
@@ -131,6 +133,7 @@ export type OpeningStatus = {
 
 const CLOSED: Omit<OpeningStatus, 'hasHours' | 'today'> = {
   isOpen: false,
+  opensAtText: null,
   closesAtText: null,
   minutesUntilClose: null,
   progress: null,
@@ -157,6 +160,7 @@ export function getOpeningStatus(hours: OpeningHour[], now: Date = new Date()): 
       ...base,
       ...CLOSED,
       isOpen: true,
+      opensAtText: today?.opensAt ?? formatTime(todayWindow.open),
       closesAtText: formatTime(todayWindow.close),
       minutesUntilClose: todayWindow.close - minutes,
       progress: clamp01((minutes - todayWindow.open) / (todayWindow.close - todayWindow.open)),
@@ -166,17 +170,22 @@ export function getOpeningStatus(hours: OpeningHour[], now: Date = new Date()): 
 
   // 2) Still inside yesterday's overnight window that spilled past midnight?
   const yesterdayDow = ((dayOfWeek + 5) % 7) + 1; // 1..7, day before
-  const yWindow = windowFor(byDay.get(yesterdayDow));
+  const yesterdayRecord = byDay.get(yesterdayDow);
+  const yWindow = windowFor(yesterdayRecord);
   if (yWindow && yWindow.close > MINUTES_PER_DAY) {
     const spill = yWindow.close - MINUTES_PER_DAY; // minutes into today
     if (minutes < spill) {
+      // We're open on yesterday's window, so the route/progress must follow *its* open→close,
+      // not today's (which may be closed or have different hours).
+      const elapsed = minutes + MINUTES_PER_DAY - yWindow.open;
       return {
         ...base,
         ...CLOSED,
         isOpen: true,
+        opensAtText: yesterdayRecord?.opensAt ?? formatTime(yWindow.open),
         closesAtText: formatTime(spill),
         minutesUntilClose: spill - minutes,
-        progress: null,
+        progress: clamp01(elapsed / (yWindow.close - yWindow.open)),
         closingSoon: spill - minutes <= 60,
       };
     }
@@ -271,10 +280,9 @@ export function getRouteStrip(
       phase: 'open',
       isOpen: true,
       hasHours: status.hasHours,
-      openText: status.today?.opensAt ?? null,
+      openText: status.opensAtText,
       closeText: status.closesAtText,
-      // Yesterday's overnight spill returns no progress; fall back to a near-end position.
-      progress: status.progress ?? 0.75,
+      progress: status.progress ?? 0,
       pinLabel: 'Öppet nu',
       bigValue: status.minutesUntilClose != null ? formatDurationShort(status.minutesUntilClose) : '—',
       bigLabel: 'kvar',
