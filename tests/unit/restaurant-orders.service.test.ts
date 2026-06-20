@@ -20,6 +20,8 @@ vi.mock('../../src/modules/supporting/restaurant-orders/infrastructure/restauran
     closeBusinessDay: vi.fn(),
     findMenuItemsByIds: vi.fn(),
     createOrder: vi.fn(),
+    releaseHeldPublicOrder: vi.fn(),
+    markPublicOrderPaid: vi.fn(),
     getOrderById: vi.fn(),
     listOrders: vi.fn(),
     listOrdersForSummary: vi.fn(),
@@ -347,6 +349,43 @@ describe('public restaurant order service', () => {
       unitPriceCents: 11_900,
       lineTotalCents: 23_800,
     });
+  });
+
+  it('creates card/Swish orders held, and releases the hold when no provider is configured', async () => {
+    const result = await createPublicRestaurantOrder('fluffys.se', {
+      fulfillmentType: 'takeaway',
+      customerName: 'Alex',
+      customerPhone: '+46700000000',
+      payment: 'card',
+      items: [{ menuItemId: 'menu_1', quantity: 1 }],
+    }, 'https://fluffys.se');
+
+    expect(restaurantOrderRepository.createOrder).toHaveBeenCalledWith(
+      'org_1',
+      'day_1',
+      null,
+      expect.objectContaining({ source: 'public', isHeld: true }),
+    );
+    // No Stripe/Swish env in tests, so payment can't start: the hold is released (pay-on-arrival).
+    expect(restaurantOrderRepository.releaseHeldPublicOrder).toHaveBeenCalledWith(order.id);
+    expect(result.paymentError).toBe(true);
+  });
+
+  it('creates pay-on-arrival orders active (not held)', async () => {
+    await createPublicRestaurantOrder('fluffys.se', {
+      fulfillmentType: 'takeaway',
+      customerName: 'Alex',
+      customerPhone: '+46700000000',
+      items: [{ menuItemId: 'menu_1', quantity: 1 }],
+    }, 'https://fluffys.se');
+
+    expect(restaurantOrderRepository.createOrder).toHaveBeenCalledWith(
+      'org_1',
+      'day_1',
+      null,
+      expect.objectContaining({ source: 'public', isHeld: false }),
+    );
+    expect(restaurantOrderRepository.releaseHeldPublicOrder).not.toHaveBeenCalled();
   });
 
   it('rejects an order whose only line names a size that does not exist (400)', async () => {

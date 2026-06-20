@@ -47,6 +47,7 @@ export default async function PublicOrderPage() {
             <Checkout
               phone={site.settings.phone}
               menuHref={publicSiteHref(routePrefix, '/meny')}
+              confirmHref={publicSiteHref(routePrefix, '/bestall/klar')}
               providers={availableOnlineProviders()}
             />
           ) : (

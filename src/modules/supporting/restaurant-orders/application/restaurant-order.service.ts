@@ -248,6 +248,13 @@ export async function createPublicRestaurantOrder(
 
   const currency = menuItems.find((item) => item.currency)?.currency ?? 'SEK';
   const totals = calculateOrderTotals(items, currency);
+
+  // Card/Swish orders are created HELD (parked) so an abandoned online payment never becomes a live
+  // kitchen order. The webhook un-holds the order when payment is confirmed; if payment can't even be
+  // started we release the hold below so it falls back to a normal pay-on-arrival order.
+  const choice = input.payment ?? 'arrival';
+  const onlinePayment = choice === 'card' || choice === 'swish';
+
   const order = await restaurantOrderRepository.createOrder(organizationId, businessDay.id, null, {
     source: 'public',
     fulfillmentType: input.fulfillmentType,
@@ -257,6 +264,7 @@ export async function createPublicRestaurantOrder(
     note: cleanText(input.note),
     paymentStatus: 'unpaid',
     paymentMethod: null,
+    isHeld: onlinePayment,
     items,
     totals,
   });
@@ -264,15 +272,15 @@ export async function createPublicRestaurantOrder(
     organizationId,
     orderId: order.id,
     fulfillmentType: order.fulfillmentType,
+    held: onlinePayment,
   });
 
-  // Optional online payment. The order already exists (unpaid); if starting the provider payment
-  // fails we keep the order and fall back to pay-on-arrival rather than erroring (avoids duplicate
-  // orders from a retry). The webhook marks it paid once the provider confirms.
+  // Optional online payment. The order already exists (unpaid, held); if starting the provider payment
+  // fails we release the hold and fall back to pay-on-arrival rather than erroring (avoids duplicate
+  // orders from a retry). The webhook marks it paid and un-holds it once the provider confirms.
   let payment: OnlinePaymentResult | undefined;
   let paymentError = false;
-  const choice = input.payment ?? 'arrival';
-  if (choice === 'card' || choice === 'swish') {
+  if (onlinePayment) {
     if (origin && isProviderEnabled(choice)) {
       try {
         payment = await createOnlinePayment({
@@ -298,6 +306,9 @@ export async function createPublicRestaurantOrder(
       }
     } else {
       paymentError = true;
+    }
+    if (paymentError) {
+      await restaurantOrderRepository.releaseHeldPublicOrder(order.id);
     }
   }
 

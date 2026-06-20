@@ -16,7 +16,17 @@ type OnlineProvider = 'card' | 'swish';
 // /bestall checkout: reviews the shared cart, picks pickup/delivery and how to pay (on arrival, or
 // online by card/Swish when enabled), and submits the public order. Card redirects to Stripe; Swish
 // shows an app-switch prompt; pay-on-arrival shows an order-number confirmation.
-export function Checkout({ phone, menuHref, providers }: { phone: string | null; menuHref: string; providers: OnlineProvider[] }) {
+export function Checkout({
+  phone,
+  menuHref,
+  confirmHref,
+  providers,
+}: {
+  phone: string | null;
+  menuHref: string;
+  confirmHref: string;
+  providers: OnlineProvider[];
+}) {
   const cart = useCart();
   const [fulfillment, setFulfillment] = useState<PublicOrderFulfillmentType>('takeaway');
   const [payment, setPayment] = useState<PublicOrderPaymentChoice>('arrival');
@@ -71,7 +81,12 @@ export function Checkout({ phone, menuHref, providers }: { phone: string | null;
   }
 
   if (swish) {
-    const appSwitch = swish.token ? `swish://paymentrequest?token=${encodeURIComponent(swish.token)}` : null;
+    // Swish m-commerce app-switch: token + URL-encoded return callbackurl so the app brings the
+    // customer back to the confirmation page after they approve the payment.
+    const returnUrl = typeof window !== 'undefined' ? `${window.location.origin}${confirmHref}` : confirmHref;
+    const appSwitch = swish.token
+      ? `swish://paymentrequest?token=${encodeURIComponent(swish.token)}&callbackurl=${encodeURIComponent(returnUrl)}`
+      : null;
     return (
       <div className="fluffy-card fluffy-cart-confirm fluffy-rise" role="status">
         <span className="fluffy-cart-confirm__icon" aria-hidden="true"><SmartphoneIcon /></span>

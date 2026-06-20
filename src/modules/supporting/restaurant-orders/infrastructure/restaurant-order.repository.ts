@@ -501,9 +501,20 @@ export const restaurantOrderRepository = {
     if (amountCents != null && amountCents !== order.totalCents) return 'amount_mismatch';
     await prisma.restaurantOrder.update({
       where: { id: order.id },
-      data: { paymentStatus: 'paid', paymentMethod: method, paidAt: new Date() },
+      // Mark paid and release the hold so a card/Swish order that was parked awaiting payment becomes
+      // a normal active order once the provider confirms.
+      data: { paymentStatus: 'paid', paymentMethod: method, paidAt: new Date(), isHeld: false },
     });
     return 'paid';
+  },
+
+  // Releases a held public order back to a normal (active) order — used when an online payment could
+  // not be started, so the order falls back to pay-on-arrival instead of staying parked forever.
+  async releaseHeldPublicOrder(orderId: string): Promise<void> {
+    await prisma.restaurantOrder.updateMany({
+      where: { id: orderId, source: 'public', isHeld: true, deletedAt: null },
+      data: { isHeld: false },
+    });
   },
 
   async listOrders(organizationId: string, input: ListRestaurantOrdersInput = {}): Promise<RestaurantOrderView[]> {
