@@ -6,7 +6,7 @@ import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
 import { cn } from '@shared/lib/utils';
 import type { RestaurantMenuCategory, RestaurantMenuItem } from '@shared/lib/api/restaurant.api';
-import { availableItems, menuItemFallbackImage, menuItemPriceLabel } from './kassa-helpers';
+import { availableItems, menuItemPriceLabel } from './kassa-helpers';
 
 export function KassaProductWorkbench({
   categories,
@@ -50,7 +50,7 @@ export function KassaProductWorkbench({
 
   return (
     <section className="fluffy-product-workbench grid min-h-0 grid-rows-[auto_auto_1fr] border-r border-[var(--ui-border)]">
-      <div className="fluffy-workbench-toolbar grid gap-3 border-b border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+      <div className="fluffy-workbench-toolbar grid gap-3 border-b border-[var(--ui-border)] bg-[var(--ui-surface)] p-3 lg:grid-cols-[minmax(0,1fr)_auto]">
         <div className="relative">
           <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)]" size={18} strokeWidth={1.75} />
           <Input
@@ -61,7 +61,7 @@ export function KassaProductWorkbench({
           />
         </div>
         <div className="flex items-center gap-2">
-          <Button type="button" variant="outline" size="icon" aria-label="Filter" className="h-12 w-12">
+          <Button type="button" variant="outline" size="icon" aria-label="Filter" className="size-12">
             <SlidersHorizontal />
           </Button>
           <Button
@@ -97,7 +97,7 @@ export function KassaProductWorkbench({
         ) : null}
       </div>
 
-      <div className="fluffy-category-strip flex items-center gap-3 overflow-x-auto border-b border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-3">
+      <div className="fluffy-category-strip flex items-center gap-2 overflow-x-auto border-b border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2">
         {categories.map((category) => (
           <button
             key={category.id}
@@ -115,10 +115,10 @@ export function KassaProductWorkbench({
         ))}
       </div>
 
-      <div className="min-h-0 overflow-y-auto p-4">
+      <div className="min-h-0 overflow-y-auto p-3">
         {selectedCategory ? (
           filteredItems.length > 0 ? (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(178px,1fr))] gap-3">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(164px,1fr))] gap-3">
               {filteredItems.map((item) => (
                 <ProductCard
                   key={item.id}
@@ -151,12 +151,17 @@ function ProductCard({
   const hasOptions = (item.modifierGroups ?? []).length > 0 || (item.variants ?? []).length > 1;
   const description = item.description || item.ingredients.slice(0, 3).map((ingredient) => ingredient.name).join(', ');
   const hasCustomImage = Boolean(item.imageUrl);
-  const imageSrc = item.imageUrl ?? menuItemFallbackImage(categoryName, item.name);
   return (
-    <article className="fluffy-product-ticket grid min-h-[198px] grid-rows-[98px_1fr] overflow-hidden rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface)] text-left">
+    <article className="fluffy-product-ticket grid min-h-[188px] grid-rows-[92px_1fr] overflow-hidden rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface)] text-left">
       <div className="fluffy-product-ticket__media grid overflow-hidden bg-[var(--ui-surface-subtle)]" data-fallback={hasCustomImage ? undefined : 'true'}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imageSrc} alt="" className="h-full w-full object-cover" />
+        {hasCustomImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={item.imageUrl ?? ''} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="fluffy-product-ticket__fallback flex h-full flex-col justify-end p-3">
+            <span className="truncate text-xs font-bold uppercase text-[var(--ui-text-muted)]">{categoryName}</span>
+          </div>
+        )}
       </div>
       <div className="flex min-h-0 flex-col justify-between gap-2 p-3">
         <div className="min-w-0">
@@ -173,7 +178,7 @@ function ProductCard({
           <Button
             type="button"
             size="icon"
-            className="fluffy-product-add size-8"
+            className="fluffy-product-add size-11"
             aria-label={`Lägg till ${item.name}`}
             onClick={() => onAddMenuItem(item)}
           >

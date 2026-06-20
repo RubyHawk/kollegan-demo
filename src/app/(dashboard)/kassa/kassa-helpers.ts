@@ -64,30 +64,6 @@ export function availableItems(category: RestaurantMenuCategory): RestaurantMenu
   return category.items.filter((item) => item.isAvailable && menuItemBasePrice(item) !== null);
 }
 
-function normalizeMenuText(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-}
-
-export function menuItemFallbackImage(categoryName: string, itemName = '') {
-  const haystack = `${normalizeMenuText(categoryName)} ${normalizeMenuText(itemName)}`;
-  if (haystack.includes('lask') || haystack.includes('dryck') || haystack.includes('coca') || haystack.includes('fanta')) {
-    return '/fluffys/menu/drinks-sides-board.jpg';
-  }
-  if (haystack.includes('extra') || haystack.includes('tillbehor') || haystack.includes('sas') || haystack.includes('vitlok')) {
-    return '/fluffys/menu/sides-sauces-board.jpg';
-  }
-  if (haystack.includes('panini') || haystack.includes('sallad') || haystack.includes('wrap')) {
-    return '/fluffys/menu/panini-salad-board.jpg';
-  }
-  if (haystack.includes('sub')) {
-    return '/fluffys/menu/subs-classic-board.jpg';
-  }
-  return '/fluffys/menu/pizza-kebab-board.jpg';
-}
-
 export function menuItemsById(categories: RestaurantMenuCategory[]): Map<string, RestaurantMenuItem> {
   const map = new Map<string, RestaurantMenuItem>();
   for (const category of categories) {
@@ -113,7 +89,7 @@ export function draftItemFromOrderItem(item: {
   return {
     draftId: `order:${item.id}`,
     menuItemId: item.menuItemId,
-    imageUrl: menuItem ? menuItem.imageUrl ?? menuItemFallbackImage('', item.name) : null,
+    imageUrl: menuItem?.imageUrl ?? null,
     name: item.name,
     quantity: item.quantity,
     variantName: item.variantName ?? null,

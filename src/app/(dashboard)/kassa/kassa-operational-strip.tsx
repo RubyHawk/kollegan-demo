@@ -75,7 +75,7 @@ export function KassaOperationalStrip({
           type="button"
           variant={orderInfoOpen ? 'default' : 'outline'}
           size="compact"
-          className="h-10 px-4"
+          className="h-11 px-4"
           onClick={onToggleOrderInfo}
         >
           <Info data-icon="inline-start" />

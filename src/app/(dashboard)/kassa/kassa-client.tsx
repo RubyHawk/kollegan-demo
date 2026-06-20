@@ -40,7 +40,6 @@ import {
   draftItemFromOrderItem,
   type DraftItem,
   menuItemBasePrice,
-  menuItemFallbackImage,
   menuItemsById,
   normalizePriceInput,
 } from './kassa-helpers';
@@ -177,7 +176,7 @@ export function KassaClient({
     const categoryName = categoryNameByItemId.get(item.id) ?? '';
     pushDraftLine({
       menuItemId: item.id,
-      imageUrl: item.imageUrl ?? menuItemFallbackImage(categoryName, item.name),
+      imageUrl: item.imageUrl ?? null,
       name: item.name,
       quantity: 1,
       variantName: variant?.name ?? null,
@@ -486,10 +485,10 @@ export function KassaClient({
           ) : (
             <div
               className={cn(
-                'grid min-h-0 flex-1 grid-cols-1',
+                'fluffy-pos-workspace relative grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[minmax(0,1fr)_360px] lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_410px]',
                 contextPanel
-                  ? 'xl:grid-cols-[minmax(0,1fr)_330px_430px] 2xl:grid-cols-[minmax(0,1fr)_360px_460px]'
-                  : 'xl:grid-cols-[minmax(0,1fr)_430px] 2xl:grid-cols-[minmax(0,1fr)_460px]',
+                  ? 'fluffy-pos-workspace--with-context 2xl:grid-cols-[minmax(0,1fr)_360px_460px]'
+                  : '2xl:grid-cols-[minmax(0,1fr)_460px]',
               )}
             >
               <KassaProductWorkbench
@@ -506,43 +505,45 @@ export function KassaClient({
                 onAddCustomItem={addCustomItem}
               />
 
-              {contextPanel === 'order-info' ? (
-                <KassaOrderInfoPanel
-                  orderNumber={editingOrder?.orderNumber ?? null}
-                  draftLineCount={draftItems.length}
-                  fulfillmentType={fulfillmentType}
-                  customerName={customerName}
-                  tableLabel={tableLabel}
-                  bookingReference={bookingReference}
-                  orderNote={orderNote}
-                  discountInput={discountInput}
-                  discountCents={discountCents}
-                  paymentMethod={paymentMethod}
-                  canAdmin={canAdmin}
-                  canMarkPaid={canMarkPaid}
-                  busy={busy}
-                  online={online}
-                  onClose={() => setOrderInfoOpen(false)}
-                  onCustomerNameChange={setCustomerName}
-                  onTableLabelChange={setTableLabel}
-                  onBookingReferenceChange={setBookingReference}
-                  onOrderNoteChange={setOrderNote}
-                  onDiscountInputChange={setDiscountInput}
-                  onPaymentMethodChange={setPaymentMethod}
-                  onSubmitOrderAction={submitOrderWithAction}
-                />
-              ) : null}
-
-              {contextPanel === 'modifiers' ? (
-                <KassaLineModifierPanel
-                  draftItem={selectedDraftItem}
-                  menuItem={selectedMenuItem}
-                  onClose={() => setSelectedDraftId(null)}
-                  onVariantChange={changeItemVariant}
-                  onModifierToggle={toggleModifier}
-                  onNoteChange={changeItemNote}
-                  onQuantityChange={changeQuantity}
-                />
+              {contextPanel ? (
+                <div className="fluffy-pos-context-layer min-h-0">
+                  {contextPanel === 'order-info' ? (
+                    <KassaOrderInfoPanel
+                      orderNumber={editingOrder?.orderNumber ?? null}
+                      draftLineCount={draftItems.length}
+                      fulfillmentType={fulfillmentType}
+                      customerName={customerName}
+                      tableLabel={tableLabel}
+                      bookingReference={bookingReference}
+                      orderNote={orderNote}
+                      discountInput={discountInput}
+                      discountCents={discountCents}
+                      paymentMethod={paymentMethod}
+                      canAdmin={canAdmin}
+                      canMarkPaid={canMarkPaid}
+                      busy={busy}
+                      online={online}
+                      onClose={() => setOrderInfoOpen(false)}
+                      onCustomerNameChange={setCustomerName}
+                      onTableLabelChange={setTableLabel}
+                      onBookingReferenceChange={setBookingReference}
+                      onOrderNoteChange={setOrderNote}
+                      onDiscountInputChange={setDiscountInput}
+                      onPaymentMethodChange={setPaymentMethod}
+                      onSubmitOrderAction={submitOrderWithAction}
+                    />
+                  ) : (
+                    <KassaLineModifierPanel
+                      draftItem={selectedDraftItem}
+                      menuItem={selectedMenuItem}
+                      onClose={() => setSelectedDraftId(null)}
+                      onVariantChange={changeItemVariant}
+                      onModifierToggle={toggleModifier}
+                      onNoteChange={changeItemNote}
+                      onQuantityChange={changeQuantity}
+                    />
+                  )}
+                </div>
               ) : null}
 
               <KassaReceiptPanel
@@ -579,6 +580,7 @@ export function KassaClient({
             businessDay={businessDay}
             summary={summary}
             activeOrders={activeOrders}
+            isComposingOrder={draftItems.length > 0 || Boolean(contextPanel)}
             busy={busy}
             canMarkPaid={canMarkPaid}
             canAdmin={canAdmin}
