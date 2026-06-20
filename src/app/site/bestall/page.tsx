@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowRightIcon, PhoneIcon } from 'lucide-react';
+import { availableOnlineProviders } from '@modules/supporting/restaurant-orders';
 import { SiteShell } from '../_components/site-shell';
 import { Checkout } from '../_components/cart/checkout';
 import { getPublicSiteRoutePrefix, getSiteData, publicSiteHref, siteMetadata } from '../_lib/public-site-data';
@@ -43,7 +44,11 @@ export default async function PublicOrderPage() {
       <section className="fluffy-section fluffy-section--white">
         <div className="fluffy-shell">
           {canOrderOnline ? (
-            <Checkout phone={site.settings.phone} menuHref={publicSiteHref(routePrefix, '/meny')} />
+            <Checkout
+              phone={site.settings.phone}
+              menuHref={publicSiteHref(routePrefix, '/meny')}
+              providers={availableOnlineProviders()}
+            />
           ) : (
             <article className="fluffy-card fluffy-order-card fluffy-rise">
               <h2>Ring &amp; beställ</h2>

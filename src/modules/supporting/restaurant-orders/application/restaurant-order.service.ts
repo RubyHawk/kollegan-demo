@@ -19,6 +19,8 @@ import {
 } from '../domain/restaurant-order.entity';
 import { resolvePublicRestaurantOrganization } from '@modules/supporting/restaurant-menu';
 import { restaurantOrderRepository } from '../infrastructure/restaurant-order.repository';
+import { createOnlinePayment, type OnlinePaymentResult } from './payment/payment.service';
+import { isProviderEnabled } from './payment/payment-config';
 
 const TAG = 'RestaurantOrderService';
 const RESTAURANT_TIME_ZONE = 'Europe/Stockholm';
@@ -216,6 +218,7 @@ export async function createRestaurantOrder(
 export async function createPublicRestaurantOrder(
   host: string | null | undefined,
   input: CreatePublicRestaurantOrderInput,
+  origin?: string | null,
 ) {
   const organizationId = await resolvePublicRestaurantOrganization(host);
   // Public online ordering is part of the public site: require it to be enabled (mirrors the public
@@ -262,7 +265,49 @@ export async function createPublicRestaurantOrder(
     orderId: order.id,
     fulfillmentType: order.fulfillmentType,
   });
-  return { orderNumber: order.orderNumber, status: order.status, fulfillmentType: order.fulfillmentType };
+
+  // Optional online payment. The order already exists (unpaid); if starting the provider payment
+  // fails we keep the order and fall back to pay-on-arrival rather than erroring (avoids duplicate
+  // orders from a retry). The webhook marks it paid once the provider confirms.
+  let payment: OnlinePaymentResult | undefined;
+  let paymentError = false;
+  const choice = input.payment ?? 'arrival';
+  if (choice === 'card' || choice === 'swish') {
+    if (origin && isProviderEnabled(choice)) {
+      try {
+        payment = await createOnlinePayment({
+          order: {
+            id: order.id,
+            orderNumber: order.orderNumber,
+            currency: order.currency,
+            totalCents: order.totalCents,
+            customerPhone: order.customerPhone ?? null,
+            items: order.items.map((item) => ({ name: item.name, quantity: item.quantity, unitPriceCents: item.unitPriceCents })),
+          },
+          provider: choice,
+          origin,
+        });
+      } catch (err) {
+        paymentError = true;
+        logger.error(TAG, 'Online payment init failed; order kept as pay-on-arrival', {
+          organizationId,
+          orderId: order.id,
+          provider: choice,
+          error: (err as Error).message,
+        });
+      }
+    } else {
+      paymentError = true;
+    }
+  }
+
+  return {
+    orderNumber: order.orderNumber,
+    status: order.status,
+    fulfillmentType: order.fulfillmentType,
+    payment,
+    paymentError,
+  };
 }
 
 export async function updateRestaurantOrder(

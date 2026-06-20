@@ -141,6 +141,17 @@
   margin-top: 6px;
 }
 
+/* Payment-method selector (pay on arrival / card / Swish) — up to three options, so flex-wrap. */
+.fluffy-pay {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.fluffy-pay button {
+  flex: 1 1 auto;
+  min-width: 96px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fluffy-add__btn {
     transition: none;

@@ -261,19 +261,34 @@ export interface PublicOrderItemPayload {
   note?: string | null;
 }
 
+export type PublicOrderPaymentChoice = 'arrival' | 'card' | 'swish';
+
 export interface PublicOrderPayload {
   fulfillmentType: PublicOrderFulfillmentType;
   customerName: string;
   customerPhone: string;
   deliveryAddress?: string | null;
   note?: string | null;
+  payment?: PublicOrderPaymentChoice;
   items: PublicOrderItemPayload[];
+}
+
+export interface PublicOrderPaymentResult {
+  provider: 'card' | 'swish';
+  /** Stripe hosted checkout URL to redirect to. */
+  redirectUrl?: string;
+  /** Swish app-switch / QR token. */
+  swishToken?: string | null;
 }
 
 export interface PublicOrderResult {
   orderNumber: number;
   status: string;
   fulfillmentType: PublicOrderFulfillmentType;
+  /** Present when an online payment was started. */
+  payment?: PublicOrderPaymentResult;
+  /** True when online payment was requested but could not be started (order kept as pay-on-arrival). */
+  paymentError?: boolean;
 }
 
 export interface ReservationListParams {

@@ -2,19 +2,30 @@
 
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { CheckCircle2Icon, MinusIcon, PlusIcon, ShoppingBagIcon, Trash2Icon } from 'lucide-react';
-import { createPublicOrder, type PublicOrderFulfillmentType } from '@shared/lib/api/restaurant.api';
+import { CheckCircle2Icon, MinusIcon, PlusIcon, ShoppingBagIcon, SmartphoneIcon, Trash2Icon } from 'lucide-react';
+import {
+  createPublicOrder,
+  type PublicOrderFulfillmentType,
+  type PublicOrderPaymentChoice,
+} from '@shared/lib/api/restaurant.api';
 import { formatPriceCents } from '@shared/lib/menu/menu-variants';
 import { cartLineKey, useCart } from './cart-context';
 
-// /bestall checkout: reviews the shared cart, picks pickup/delivery, collects contact details, and
-// submits the public order. On success it clears the cart and shows an order-number confirmation.
-export function Checkout({ phone, menuHref }: { phone: string | null; menuHref: string }) {
+type OnlineProvider = 'card' | 'swish';
+
+// /bestall checkout: reviews the shared cart, picks pickup/delivery and how to pay (on arrival, or
+// online by card/Swish when enabled), and submits the public order. Card redirects to Stripe; Swish
+// shows an app-switch prompt; pay-on-arrival shows an order-number confirmation.
+export function Checkout({ phone, menuHref, providers }: { phone: string | null; menuHref: string; providers: OnlineProvider[] }) {
   const cart = useCart();
   const [fulfillment, setFulfillment] = useState<PublicOrderFulfillmentType>('takeaway');
+  const [payment, setPayment] = useState<PublicOrderPaymentChoice>('arrival');
   const [status, setStatus] = useState<'idle' | 'saving' | 'error'>('idle');
   const [error, setError] = useState('');
-  const [confirmation, setConfirmation] = useState<{ orderNumber: number; fulfillmentType: string } | null>(null);
+  const [confirmation, setConfirmation] = useState<{ orderNumber: number; fulfillmentType: string; paymentError: boolean } | null>(null);
+  const [swish, setSwish] = useState<{ token: string | null } | null>(null);
+
+  const payChoice: PublicOrderPaymentChoice = providers.includes(payment as OnlineProvider) ? payment : 'arrival';
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -29,13 +40,27 @@ export function Checkout({ phone, menuHref }: { phone: string | null; menuHref: 
         customerPhone: String(form.get('customerPhone') ?? ''),
         deliveryAddress: fulfillment === 'delivery' ? String(form.get('deliveryAddress') ?? '') : null,
         note: String(form.get('note') ?? '') || null,
+        payment: payChoice,
         items: cart.lines.map((line) => ({
           menuItemId: line.menuItemId,
           quantity: line.quantity,
           variantLabel: line.variantLabel || null,
         })),
       });
-      setConfirmation({ orderNumber: result.orderNumber, fulfillmentType: result.fulfillmentType });
+
+      if (result.payment?.redirectUrl) {
+        cart.clear();
+        window.location.assign(result.payment.redirectUrl);
+        return;
+      }
+      if (result.payment?.provider === 'swish') {
+        cart.clear();
+        setSwish({ token: result.payment.swishToken ?? null });
+        setStatus('idle');
+        return;
+      }
+
+      setConfirmation({ orderNumber: result.orderNumber, fulfillmentType: result.fulfillmentType, paymentError: result.paymentError === true });
       cart.clear();
       setStatus('idle');
       event.currentTarget.reset();
@@ -43,6 +68,21 @@ export function Checkout({ phone, menuHref }: { phone: string | null; menuHref: 
       setError((err as Error).message);
       setStatus('error');
     }
+  }
+
+  if (swish) {
+    const appSwitch = swish.token ? `swish://paymentrequest?token=${encodeURIComponent(swish.token)}` : null;
+    return (
+      <div className="fluffy-card fluffy-cart-confirm fluffy-rise" role="status">
+        <span className="fluffy-cart-confirm__icon" aria-hidden="true"><SmartphoneIcon /></span>
+        <h2>Öppna Swish för att betala</h2>
+        <p>Vi har skickat en betalförfrågan till Swish. Öppna appen och godkänn betalningen — din beställning bekräftas så fort den är klar.</p>
+        {appSwitch ? (
+          <a href={appSwitch} className="fluffy-button fluffy-button--primary">Öppna Swish</a>
+        ) : null}
+        <button type="button" className="fluffy-link" onClick={() => setSwish(null)}>Avbryt</button>
+      </div>
+    );
   }
 
   if (confirmation) {
@@ -56,6 +96,9 @@ export function Checkout({ phone, menuHref }: { phone: string | null; menuHref: 
             ? 'Vi förbereder din mat och kör ut den till dig. Du betalar vid leverans.'
             : 'Vi förbereder din mat för avhämtning. Du betalar när du hämtar.'}
         </p>
+        {confirmation.paymentError ? (
+          <p className="fluffy-cart-paynote">Onlinebetalningen kunde inte startas — betala på plats i stället.</p>
+        ) : null}
         {phone ? <p className="fluffy-muted">Frågor? Ring oss på {phone}.</p> : null}
         <Link href={menuHref} className="fluffy-button fluffy-button--primary">Beställ mer</Link>
       </div>
@@ -72,6 +115,14 @@ export function Checkout({ phone, menuHref }: { phone: string | null; menuHref: 
       </div>
     );
   }
+
+  const submitLabel = status === 'saving'
+    ? 'Skickar...'
+    : payChoice === 'card'
+      ? `Betala med kort • ${formatPriceCents(cart.subtotalCents, cart.currency)}`
+      : payChoice === 'swish'
+        ? `Betala med Swish • ${formatPriceCents(cart.subtotalCents, cart.currency)}`
+        : `Skicka beställning • ${formatPriceCents(cart.subtotalCents, cart.currency)}`;
 
   return (
     <aside className="fluffy-cart-panel fluffy-cart-panel--checkout fluffy-rise" aria-label="Din beställning">
@@ -110,13 +161,21 @@ export function Checkout({ phone, menuHref }: { phone: string | null; menuHref: 
 
       <form onSubmit={onSubmit} className="fluffy-cart-form">
         <fieldset className="fluffy-fulfillment" aria-label="Hämtning eller leverans">
-          <button type="button" aria-pressed={fulfillment === 'takeaway'} onClick={() => setFulfillment('takeaway')}>
-            Avhämtning
-          </button>
-          <button type="button" aria-pressed={fulfillment === 'delivery'} onClick={() => setFulfillment('delivery')}>
-            Leverans
-          </button>
+          <button type="button" aria-pressed={fulfillment === 'takeaway'} onClick={() => setFulfillment('takeaway')}>Avhämtning</button>
+          <button type="button" aria-pressed={fulfillment === 'delivery'} onClick={() => setFulfillment('delivery')}>Leverans</button>
         </fieldset>
+
+        {providers.length > 0 ? (
+          <fieldset className="fluffy-fulfillment fluffy-pay" aria-label="Betalsätt">
+            <button type="button" aria-pressed={payChoice === 'arrival'} onClick={() => setPayment('arrival')}>Betala på plats</button>
+            {providers.includes('card') ? (
+              <button type="button" aria-pressed={payChoice === 'card'} onClick={() => setPayment('card')}>Kort</button>
+            ) : null}
+            {providers.includes('swish') ? (
+              <button type="button" aria-pressed={payChoice === 'swish'} onClick={() => setPayment('swish')}>Swish</button>
+            ) : null}
+          </fieldset>
+        ) : null}
 
         <div className="fluffy-form__grid">
           <label className="fluffy-field">
@@ -142,11 +201,17 @@ export function Checkout({ phone, menuHref }: { phone: string | null; menuHref: 
         </label>
 
         <p className="fluffy-cart-paynote">
-          {fulfillment === 'delivery' ? 'Du betalar kontant eller med kort vid leverans.' : 'Du betalar kontant eller med kort vid avhämtning.'}
+          {payChoice === 'card'
+            ? 'Du skickas vidare till en säker kortbetalning.'
+            : payChoice === 'swish'
+              ? 'Du godkänner betalningen i Swish-appen.'
+              : fulfillment === 'delivery'
+                ? 'Du betalar kontant eller med kort vid leverans.'
+                : 'Du betalar kontant eller med kort vid avhämtning.'}
         </p>
 
         <button type="submit" className="fluffy-button fluffy-button--dark" disabled={cart.lines.length === 0 || status === 'saving'}>
-          {status === 'saving' ? 'Skickar...' : `Skicka beställning • ${formatPriceCents(cart.subtotalCents, cart.currency)}`}
+          {submitLabel}
         </button>
 
         {status === 'error' ? <p role="alert" className="fluffy-error">{error || 'Det gick inte att skicka beställningen.'}</p> : null}
