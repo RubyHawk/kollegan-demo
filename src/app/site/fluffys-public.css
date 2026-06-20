@@ -328,36 +328,6 @@ body:has(.fluffy-public) {
   line-height: 1.62;
 }
 
-.fluffy-hours {
-  overflow: hidden;
-  border: 1px solid var(--fp-line);
-  border-radius: var(--fp-radius);
-  background: var(--fp-paper-strong);
-}
-
-.fluffy-hours__row {
-  display: flex;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 14px 16px;
-  font-size: 0.95rem;
-}
-
-.fluffy-hours__row + .fluffy-hours__row {
-  border-top: 1px solid var(--fp-line);
-}
-
-.fluffy-hours__day {
-  color: var(--fp-ink);
-  font-weight: 900;
-}
-
-.fluffy-hours__time {
-  color: rgba(9, 8, 7, 0.68);
-  font-weight: 800;
-  text-align: right;
-}
-
 .fluffy-rise {
   animation: fluffy-rise 560ms var(--fp-ease) both;
 }
