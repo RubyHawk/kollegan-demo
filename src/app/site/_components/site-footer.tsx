@@ -3,6 +3,7 @@ import { ArrowUpRightIcon, ClockIcon, MailIcon, MapPinIcon, PhoneIcon } from 'lu
 import type { PublicRestaurantSite } from '@modules/supporting/restaurant-menu';
 import { addressLine, DAY_LABELS, publicSiteHref } from '../_lib/public-site-data';
 import { getOpeningStatus, relativeDayWord, stockholmNow } from '../_lib/opening-status';
+import { ScribbleStroke } from './scribble-stroke';
 
 function telHref(phone: string | null) {
   const normalized = phone?.replace(/[^\d+]/g, '');
@@ -25,15 +26,55 @@ function footerOpenLabel(site: PublicRestaurantSite): { open: boolean | null; te
   return { open: false, text: 'Stängt' };
 }
 
+/**
+ * Roadside "send-off" footer: a poster farewell that mirrors the "Välkommen in!" entry, a live
+ * open status + the primary actions, a dashed-road divider carrying the town like the route pin,
+ * then the find-us / contact / quick-link columns. Scoped to the Fluffy public site.
+ */
 export function FluffysFooter({ site, routePrefix = '' }: { site: PublicRestaurantSite; routePrefix?: string }) {
   const { settings } = site;
   const address = addressLine(site);
   const tel = telHref(settings.phone);
   const status = footerOpenLabel(site);
+  const town = settings.city || 'Laxå';
   const mapQuery = [settings.siteName, address].filter(Boolean).join(', ') || settings.siteName;
 
   return (
     <footer className="fluffy-footer">
+      <div className="fluffy-shell fluffy-footer__sendoff">
+        <div className="fluffy-footer__sendoff-copy">
+          <p className="fluffy-footer__kicker">På väg vidare?</p>
+          <p className="fluffy-footer__headline">
+            <span>Kör försiktigt</span>
+            <ScribbleStroke className="fluffy-footer__scribble" />
+          </p>
+          <p className="fluffy-footer__sendoff-sub">Tack för besöket — vi ses längs vägen.</p>
+        </div>
+        <div className="fluffy-footer__sendoff-actions">
+          <p className="fluffy-footer__status" data-open={status.open ?? undefined}>
+            <ClockIcon aria-hidden="true" />
+            {status.text}
+          </p>
+          <div className="fluffy-footer__cta-row">
+            <Link href={publicSiteHref(routePrefix, '/bestall')} className="fluffy-footer__cta fluffy-footer__cta--order">
+              Beställ
+            </Link>
+            <Link href={publicSiteHref(routePrefix, '/boka')} className="fluffy-footer__cta">
+              Boka bord
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className="fluffy-shell">
+        <div className="fluffy-footer__road" aria-hidden="true">
+          <span className="fluffy-footer__road-chip">
+            <MapPinIcon aria-hidden="true" />
+            {town}
+          </span>
+        </div>
+      </div>
+
       <div className="fluffy-shell fluffy-footer__inner">
         <div className="fluffy-footer__brand-col">
           <Link href={publicSiteHref(routePrefix, '/')} className="fluffy-footer__brand">
@@ -44,11 +85,11 @@ export function FluffysFooter({ site, routePrefix = '' }: { site: PublicRestaura
               <small>Mat vid vägen</small>
             </span>
           </Link>
-          <p className="fluffy-footer__status" data-open={status.open ?? undefined}>
-            <ClockIcon aria-hidden="true" />
-            {status.text}
-          </p>
           {settings.heroSubtitle ? <p className="fluffy-footer__tagline">{settings.heroSubtitle}</p> : null}
+          <span className="fluffy-footer__shield">
+            <b>E20</b>
+            <span>Längs vägen i {town}</span>
+          </span>
         </div>
 
         <nav className="fluffy-footer__col" aria-label="Hitta hit">
@@ -81,12 +122,6 @@ export function FluffysFooter({ site, routePrefix = '' }: { site: PublicRestaura
               {settings.email}
             </a>
           ) : null}
-          <Link href={publicSiteHref(routePrefix, '/bestall')} className="fluffy-footer__cta fluffy-footer__cta--order">
-            Beställ
-          </Link>
-          <Link href={publicSiteHref(routePrefix, '/boka')} className="fluffy-footer__cta">
-            Boka bord
-          </Link>
         </div>
 
         <nav className="fluffy-footer__col" aria-label="Snabblänkar">
