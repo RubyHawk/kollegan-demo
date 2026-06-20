@@ -74,7 +74,7 @@ export function OpeningRoute({ hours }: { hours: OpeningHour[] }) {
   const bigParts = route.bigValue.split(' ');
 
   return (
-    <div className="fluffy-hours" suppressHydrationWarning>
+    <div className="fluffy-routehours" suppressHydrationWarning>
       <div className="fluffy-route fluffy-rise">
         <p className="fluffy-eyebrow">Öppettider</p>
         <h2 className="fluffy-route__title">Kika in när du är på väg</h2>

@@ -4,14 +4,14 @@
    the Fluffy public site (.fluffy-public, --fp-* tokens). Kept separate from the reusable
    availability card / weekly table in fluffys-public-hours.css. */
 
-.fluffy-hours {
+.fluffy-routehours {
   display: grid;
   gap: 44px;
   align-items: center;
 }
 
 @media (min-width: 900px) {
-  .fluffy-hours {
+  .fluffy-routehours {
     grid-template-columns: minmax(0, 1.32fr) minmax(0, 332px);
     gap: 56px;
     align-items: center;
