@@ -21,8 +21,8 @@ It summarizes what the repository can currently prove about the ERP refactor and
 | Metric | Value |
 |---|---:|
 | Implementation-order items in plan | 18 |
-| Tracked files scanned | 1381 |
-| Source files scanned | 1125 |
+| Tracked files scanned | 1383 |
+| Source files scanned | 1126 |
 | API route files | 168 |
 | API v1 route files | 131 |
 | Feature API clients | 32 |

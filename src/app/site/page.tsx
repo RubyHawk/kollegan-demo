@@ -12,8 +12,7 @@ import {
 } from 'lucide-react';
 import type { RestaurantMenuItemView } from '@modules/supporting/restaurant-menu';
 import { MenuBoard } from './_components/menu-list';
-import { AvailabilityStatus } from './_components/availability-status';
-import { WeeklyHours } from './_components/opening-hours';
+import { OpeningRoute } from './_components/opening-route';
 import { ScribbleStroke } from './_components/scribble-stroke';
 import { SiteShell } from './_components/site-shell';
 import { addressLine, getPublicSiteRoutePrefix, getSiteData, publicSiteHref, siteMetadata } from './_lib/public-site-data';
@@ -281,16 +280,8 @@ export default async function PublicHomePage() {
       </section>
 
       <section className="fluffy-section fluffy-section--white" id="oppettider">
-        <div className="fluffy-shell fluffy-availability">
-          <div className="fluffy-availability__lead fluffy-rise">
-            <p className="fluffy-eyebrow">Öppettider</p>
-            <h2 className="fluffy-availability__title">Kika in när du är på väg</h2>
-            <AvailabilityStatus hours={site.openingHours} />
-          </div>
-          <div className="fluffy-availability__week fluffy-rise fluffy-delay-1">
-            <p className="fluffy-availability__week-title">Veckans tider</p>
-            <WeeklyHours hours={site.openingHours} />
-          </div>
+        <div className="fluffy-shell">
+          <OpeningRoute hours={site.openingHours} />
         </div>
       </section>
 

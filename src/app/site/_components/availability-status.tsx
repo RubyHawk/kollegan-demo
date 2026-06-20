@@ -45,7 +45,8 @@ export function AvailabilityStatus({ hours }: { hours: OpeningHour[] }) {
     sub = 'Inga öppettider just nu';
   }
 
-  const showProgress = status.isOpen && status.progress != null && status.today?.opensAt && status.closesAtText;
+  const openLabel = status.opensAtText ?? status.today?.opensAt;
+  const showProgress = status.isOpen && status.progress != null && openLabel && status.closesAtText;
 
   return (
     <div className="fluffy-avail" data-open={status.hasHours ? status.isOpen : undefined} suppressHydrationWarning>
@@ -66,7 +67,7 @@ export function AvailabilityStatus({ hours }: { hours: OpeningHour[] }) {
             <span className="fluffy-avail__fill" style={{ width: `${Math.round((status.progress ?? 0) * 100)}%` }} />
           </span>
           <div className="fluffy-avail__scale">
-            <span>{status.today?.opensAt}</span>
+            <span>{openLabel}</span>
             <span>{status.closesAtText}</span>
           </div>
         </div>

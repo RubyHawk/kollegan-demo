@@ -88,6 +88,16 @@ export function formatDuration(totalMinutes: number): string {
   return `${h} tim ${m} min`;
 }
 
+/** Compact readout for the route strip, e.g. "4t 36m", "36m", "4t". */
+export function formatDurationShort(totalMinutes: number): string {
+  const min = Math.max(0, Math.round(totalMinutes));
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}t`;
+  return `${h}t ${m}m`;
+}
+
 /** A normalized opening window for a given weekday, or null when closed/unknown. */
 function windowFor(hour: OpeningHour | undefined): { open: number; close: number } | null {
   if (!hour || hour.isClosed) return null;
@@ -104,11 +114,13 @@ export type OpeningStatus = {
   isOpen: boolean;
   /** today's raw record (for rendering today's hours / closed label) */
   today: OpeningHour | null;
+  /** the active window's opening time, e.g. "18:00" — yesterday's when open via an overnight spill */
+  opensAtText: string | null;
   /** "22:00" when currently open */
   closesAtText: string | null;
   /** minutes left until close, when open */
   minutesUntilClose: number | null;
-  /** 0..1 position within today's open window, when open */
+  /** 0..1 position within the active open window, when open */
   progress: number | null;
   /** about to close within the next hour */
   closingSoon: boolean;
@@ -121,6 +133,7 @@ export type OpeningStatus = {
 
 const CLOSED: Omit<OpeningStatus, 'hasHours' | 'today'> = {
   isOpen: false,
+  opensAtText: null,
   closesAtText: null,
   minutesUntilClose: null,
   progress: null,
@@ -147,6 +160,7 @@ export function getOpeningStatus(hours: OpeningHour[], now: Date = new Date()): 
       ...base,
       ...CLOSED,
       isOpen: true,
+      opensAtText: today?.opensAt ?? formatTime(todayWindow.open),
       closesAtText: formatTime(todayWindow.close),
       minutesUntilClose: todayWindow.close - minutes,
       progress: clamp01((minutes - todayWindow.open) / (todayWindow.close - todayWindow.open)),
@@ -156,17 +170,22 @@ export function getOpeningStatus(hours: OpeningHour[], now: Date = new Date()): 
 
   // 2) Still inside yesterday's overnight window that spilled past midnight?
   const yesterdayDow = ((dayOfWeek + 5) % 7) + 1; // 1..7, day before
-  const yWindow = windowFor(byDay.get(yesterdayDow));
+  const yesterdayRecord = byDay.get(yesterdayDow);
+  const yWindow = windowFor(yesterdayRecord);
   if (yWindow && yWindow.close > MINUTES_PER_DAY) {
     const spill = yWindow.close - MINUTES_PER_DAY; // minutes into today
     if (minutes < spill) {
+      // We're open on yesterday's window, so the route/progress must follow *its* open→close,
+      // not today's (which may be closed or have different hours).
+      const elapsed = minutes + MINUTES_PER_DAY - yWindow.open;
       return {
         ...base,
         ...CLOSED,
         isOpen: true,
+        opensAtText: yesterdayRecord?.opensAt ?? formatTime(yWindow.open),
         closesAtText: formatTime(spill),
         minutesUntilClose: spill - minutes,
-        progress: null,
+        progress: clamp01(elapsed / (yWindow.close - yWindow.open)),
         closingSoon: spill - minutes <= 60,
       };
     }
@@ -219,4 +238,94 @@ export function relativeDayWord(targetDow: number, todayDow: number, dayLabels: 
   if (targetDow === todayDow) return 'idag';
   if (targetDow === (todayDow % 7) + 1) return 'imorgon';
   return (dayLabels[targetDow] ?? '').toLowerCase();
+}
+
+/**
+ * The "route strip" view-model (Concept D): today's open window as a horizontal route from
+ * opening (left) to closing (right), with a "now" pin and a big time-left readout. Derived
+ * entirely from live opening hours so the pin position, the green/dashed split and the readout
+ * all reflect the real schedule.
+ */
+export type RouteStripPhase = 'open' | 'opens-today' | 'closed';
+
+export type RouteStrip = {
+  phase: RouteStripPhase;
+  isOpen: boolean;
+  hasHours: boolean;
+  /** strip endpoints — "12:00" (left) … "23:00" (right); null when unknown */
+  openText: string | null;
+  closeText: string | null;
+  /** 0..1 position of the "now" pin between open (0) and close (1) */
+  progress: number;
+  /** caption above the pin */
+  pinLabel: string;
+  /** big readout value, e.g. "4t 36m" */
+  bigValue: string;
+  /** small label after the readout, e.g. "kvar" / "till öppning" */
+  bigLabel: string;
+  /** supporting line, e.g. "Stänger kl 23:00" / "Öppnar imorgon 12:00" */
+  closeLine: string;
+};
+
+export function getRouteStrip(
+  hours: OpeningHour[],
+  now: Date = new Date(),
+  dayLabels: Record<number, string> = DAY_LABELS,
+): RouteStrip {
+  const status = getOpeningStatus(hours, now);
+  const { dayOfWeek } = stockholmNow(now);
+
+  if (status.isOpen) {
+    return {
+      phase: 'open',
+      isOpen: true,
+      hasHours: status.hasHours,
+      openText: status.opensAtText,
+      closeText: status.closesAtText,
+      progress: status.progress ?? 0,
+      pinLabel: 'Öppet nu',
+      bigValue: status.minutesUntilClose != null ? formatDurationShort(status.minutesUntilClose) : '—',
+      bigLabel: 'kvar',
+      closeLine: status.closesAtText ? `Stänger kl ${status.closesAtText}` : 'Öppet just nu',
+    };
+  }
+
+  // Closed now but opens again later today: show today's window with the pin parked at the start.
+  if (status.nextOpenDayOfWeek === dayOfWeek && status.today && !status.today.isClosed) {
+    return {
+      phase: 'opens-today',
+      isOpen: false,
+      hasHours: status.hasHours,
+      openText: status.today.opensAt ?? status.nextOpenAtText,
+      closeText: status.today.closesAt,
+      progress: 0,
+      pinLabel: 'Öppnar',
+      bigValue: status.minutesUntilOpen != null ? formatDurationShort(status.minutesUntilOpen) : '—',
+      bigLabel: 'till öppning',
+      closeLine: status.nextOpenAtText ? `Öppnar kl ${status.nextOpenAtText}` : 'Stängt just nu',
+    };
+  }
+
+  // Closed — opens on another day (or no hours at all).
+  const nextDow = status.nextOpenDayOfWeek;
+  const nextRecord = nextDow != null ? hours.find((h) => h.dayOfWeek === nextDow) : undefined;
+  const word = nextDow != null ? relativeDayWord(nextDow, dayOfWeek, dayLabels) : '';
+  const whenWord = word === 'idag' || word === 'imorgon' ? word : word ? `på ${word}` : '';
+  const closeLine = status.nextOpenAtText
+    ? `Öppnar ${whenWord ? `${whenWord} ` : ''}${status.nextOpenAtText}`
+    : status.hasHours
+      ? 'Stängt just nu'
+      : 'Öppettider uppdateras';
+  return {
+    phase: 'closed',
+    isOpen: false,
+    hasHours: status.hasHours,
+    openText: status.nextOpenAtText,
+    closeText: nextRecord && !nextRecord.isClosed ? nextRecord.closesAt : null,
+    progress: 0,
+    pinLabel: 'Öppnar',
+    bigValue: status.minutesUntilOpen != null ? formatDurationShort(status.minutesUntilOpen) : '—',
+    bigLabel: 'till öppning',
+    closeLine,
+  };
 }
