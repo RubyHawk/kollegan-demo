@@ -4,12 +4,14 @@ import type { RestaurantOrderModifierSelection } from '@shared/lib/api/restauran
 export type DraftItem = {
   draftId: string;
   menuItemId: string | null;
+  imageUrl?: string | null;
   name: string;
   quantity: number;
   variantName: string | null;
   variantPriceCents: number | null;
   selectedModifiers: RestaurantOrderModifierSelection[];
   modifierTotalCents: number;
+  basePriceCents: number;
   unitPriceCents: number;
   note: string | null;
 };
@@ -60,4 +62,42 @@ export function modifierSummary(modifiers: RestaurantOrderModifierSelection[]): 
 
 export function availableItems(category: RestaurantMenuCategory): RestaurantMenuItem[] {
   return category.items.filter((item) => item.isAvailable && menuItemBasePrice(item) !== null);
+}
+
+export function menuItemsById(categories: RestaurantMenuCategory[]): Map<string, RestaurantMenuItem> {
+  const map = new Map<string, RestaurantMenuItem>();
+  for (const category of categories) {
+    for (const item of category.items) map.set(item.id, item);
+  }
+  return map;
+}
+
+export function draftItemFromOrderItem(item: {
+  id: string;
+  menuItemId: string | null;
+  name: string;
+  quantity: number;
+  variantName?: string | null;
+  variantPriceCents?: number | null;
+  selectedModifiers?: RestaurantOrderModifierSelection[];
+  modifierTotalCents?: number;
+  unitPriceCents: number;
+  note: string | null;
+}, menuItem?: RestaurantMenuItem | null): DraftItem {
+  const modifierTotalCents = item.modifierTotalCents ?? 0;
+  const basePriceCents = item.variantPriceCents ?? Math.max(0, item.unitPriceCents - modifierTotalCents);
+  return {
+    draftId: `order:${item.id}`,
+    menuItemId: item.menuItemId,
+    imageUrl: menuItem?.imageUrl ?? null,
+    name: item.name,
+    quantity: item.quantity,
+    variantName: item.variantName ?? null,
+    variantPriceCents: item.variantPriceCents ?? null,
+    selectedModifiers: item.selectedModifiers ?? [],
+    modifierTotalCents,
+    basePriceCents,
+    unitPriceCents: basePriceCents + modifierTotalCents,
+    note: item.note,
+  };
 }

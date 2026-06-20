@@ -24,6 +24,11 @@ import type {
 const ACTIVE_ORDER_STATUSES: RestaurantOrderStatus[] = ['new', 'preparing', 'ready'];
 const MAX_ORDER_NUMBER_RETRIES = 5;
 
+type UpdateRestaurantOrderPersistenceInput = Omit<UpdateRestaurantOrderInput, 'items'> & {
+  items?: NormalizedOrderItem[];
+  totals?: RestaurantOrderTotals;
+};
+
 type BusinessDayRow = {
   id: string;
   organizationId: string;
@@ -569,7 +574,7 @@ export const restaurantOrderRepository = {
     organizationId: string,
     id: string,
     actorId: string,
-    input: UpdateRestaurantOrderInput,
+    input: UpdateRestaurantOrderPersistenceInput,
   ): Promise<RestaurantOrderView | null> {
     const existing = await prisma.restaurantOrder.findFirst({
       where: { id, organizationId, deletedAt: null },
@@ -597,11 +602,40 @@ export const restaurantOrderRepository = {
         ...(input.tableLabel !== undefined ? { tableLabel: input.tableLabel } : {}),
         ...(input.bookingReference !== undefined ? { bookingReference: input.bookingReference } : {}),
         ...(input.note !== undefined ? { note: input.note } : {}),
+        ...(input.discountCents !== undefined ? { discountCents: input.discountCents ?? 0 } : {}),
+        ...(input.taxRateBps !== undefined ? { taxRateBps: input.taxRateBps ?? 1200 } : {}),
+        ...(input.totals !== undefined ? {
+          subtotalCents: input.totals.subtotalCents,
+          discountCents: input.totals.discountCents,
+          taxCents: input.totals.taxCents,
+          taxRateBps: input.totals.taxRateBps,
+          totalCents: input.totals.totalCents,
+          currency: input.totals.currency,
+        } : {}),
         ...(input.isHeld !== undefined ? { isHeld: input.isHeld } : {}),
         ...(nextKotStatus !== undefined ? {
           kotStatus: nextKotStatus,
           ...(nextKotStatus !== 'not_sent' ? { sentToKitchenAt: now } : {}),
           ...(nextKotStatus === 'printed' ? { printedAt: now, printCount: { increment: 1 } } : {}),
+        } : {}),
+        ...(input.items !== undefined ? {
+          items: {
+            deleteMany: {},
+            create: input.items.map((item) => ({
+              organizationId,
+              menuItemId: item.menuItemId,
+              name: item.name,
+              quantity: item.quantity,
+              variantName: item.variantName,
+              variantPriceCents: item.variantPriceCents,
+              selectedModifiers: item.selectedModifiers as unknown as Prisma.InputJsonValue,
+              modifierTotalCents: item.modifierTotalCents,
+              unitPriceCents: item.unitPriceCents,
+              lineTotalCents: item.lineTotalCents,
+              note: item.note,
+              sortOrder: item.sortOrder,
+            })),
+          },
         } : {}),
         updatedBy: actorId,
       },

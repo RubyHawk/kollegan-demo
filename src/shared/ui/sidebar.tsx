@@ -40,6 +40,7 @@ function SidebarHeader({ collapsed, onMobileClose, brand }: SidebarHeaderProps) 
         'flex items-center shrink-0 h-14',
         'border-b border-[var(--ui-border)]',
         collapsed ? 'justify-center px-0' : 'px-4 gap-2.5',
+        brand?.key === 'fluffys' && 'fluffy-shell-sidebar-header',
       )}
     >
       <motion.div
@@ -190,7 +191,12 @@ export default function Sidebar({
           {collapsed ? <ChevronRightIcon size={14} /> : <ChevronLeftIcon size={14} />}
         </button>
 
-        <aside className="h-full w-full flex flex-col border-r border-[var(--ui-border)] bg-[var(--ui-surface)] overflow-hidden">
+        <aside
+          className={cn(
+            'h-full w-full flex flex-col border-r border-[var(--ui-border)] bg-[var(--ui-surface)] overflow-hidden',
+            brand?.key === 'fluffys' && 'fluffy-shell-sidebar',
+          )}
+        >
           <SidebarHeader collapsed={collapsed} onMobileClose={onMobileClose} brand={brand} />
 
           <div

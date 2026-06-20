@@ -177,6 +177,12 @@ describe('restaurant order domain rules', () => {
     ], menu)).toThrow(/inte tillgänglig/);
   });
 
+  it('rejects unavailable menu-backed items in portal order normalization', () => {
+    expect(() => normalizeOrderItems([
+      { menuItemId: 'soldout', quantity: 1 },
+    ], variantMenu)).toThrow(/inte tillgängligt/);
+  });
+
   it('builds public order lines from menu variants, dropping unorderable lines', () => {
     const items = buildPublicOrderItems([
       { menuItemId: 'pizza', quantity: 2, variantLabel: 'M', unitPriceCents: 1 },

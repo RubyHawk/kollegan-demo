@@ -138,7 +138,7 @@ describe('restaurant order API handlers', () => {
     expect(res.status).toBe(201);
     expect(res.headers.get('Location')).toBe('/api/v1/restaurant/orders/order_1');
     expect(body.data.order.id).toBe('order_1');
-    expect(createRestaurantOrder).toHaveBeenCalledWith('org_1', 'usr_1', payload, { canMarkPaid: true });
+    expect(createRestaurantOrder).toHaveBeenCalledWith('org_1', 'usr_1', payload, { canMarkPaid: true, canAdmin: true });
   });
 
   it('updates order payment state with payment and admin flags', async () => {
@@ -154,6 +154,36 @@ describe('restaurant order API handlers', () => {
       paymentStatus: 'refunded',
       paymentMethod: 'card',
     }, { canMarkPaid: true, canAdmin: true });
+  });
+
+  it('accepts held-order item replacement payloads through the update handler', async () => {
+    const payload = {
+      items: [{
+        menuItemId: '550e8400-e29b-41d4-a716-446655440000',
+        quantity: 2,
+        selectedModifiers: [{
+          groupId: 'sas',
+          groupName: 'Sås',
+          optionId: 'vitlok',
+          optionName: 'Vitlök',
+          priceDeltaCents: 1000,
+        }],
+      }],
+      discountCents: 0,
+      taxRateBps: 1200,
+      isHeld: true,
+      kotStatus: 'not_sent',
+    };
+
+    const res = await handleUpdateRestaurantOrder(makeReq({
+      method: 'PATCH',
+      url: 'http://localhost/api/v1/restaurant/orders/order_1',
+      headers: authHeaders(),
+      body: payload,
+    }));
+
+    expect(res.status).toBe(200);
+    expect(updateRestaurantOrder).toHaveBeenCalledWith('org_1', 'order_1', 'usr_1', payload, { canMarkPaid: true, canAdmin: true });
   });
 
   it('returns summary from the authenticated organization only', async () => {

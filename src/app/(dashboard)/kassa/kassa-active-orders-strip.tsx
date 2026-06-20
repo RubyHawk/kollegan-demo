@@ -1,5 +1,6 @@
 'use client';
 
+import { CalendarCheck, Clock3, RotateCcw, Send } from 'lucide-react';
 import { Button } from '@shared/ui/button';
 import { StatusBadge, type StatusTone } from '@shared/ui/status-badge';
 import type {
@@ -9,22 +10,22 @@ import type {
   RestaurantOrderStatus,
   RestaurantOrderSummary,
 } from '@shared/lib/api/restaurant-orders.api';
-import { money } from './kassa-helpers';
+import { timeLabel } from './kassa-helpers';
 
 const FULFILLMENT_LABELS: Record<RestaurantFulfillmentType, string> = {
-  takeaway: 'Avhämtning',
-  dine_in: 'Bordsservering',
+  takeaway: 'Takeaway',
+  dine_in: 'Bord',
   counter: 'Disk',
   booking_linked: 'Bokning',
   delivery: 'Leverans',
 };
 
 const STATUS_LABELS: Record<RestaurantOrderStatus, string> = {
-  new: 'Ny',
-  preparing: 'Tillagas',
-  ready: 'Klar',
-  completed: 'Utlämnad',
-  cancelled: 'Makulerad',
+  new: 'NY',
+  preparing: 'TILLAGAS',
+  ready: 'KLAR',
+  completed: 'UTLÄMNAD',
+  cancelled: 'MAKULERAD',
 };
 
 const STATUS_TONES: Record<RestaurantOrderStatus, StatusTone> = {
@@ -38,7 +39,7 @@ const STATUS_TONES: Record<RestaurantOrderStatus, StatusTone> = {
 function orderNextAction(order: RestaurantOrder): { status: RestaurantOrderStatus; label: string } | null {
   if (order.status === 'new') return { status: 'preparing', label: 'Tillagas' };
   if (order.status === 'preparing') return { status: 'ready', label: 'Klar' };
-  if (order.status === 'ready') return { status: 'completed', label: 'Utlämnad' };
+  if (order.status === 'ready') return { status: 'completed', label: 'Utlämna' };
   return null;
 }
 
@@ -49,10 +50,11 @@ export function KassaActiveOrdersStrip({
   busy,
   canMarkPaid,
   canAdmin,
-  canReadReports,
   onMarkPaid,
   onSendHeld,
   onMoveOrder,
+  onReopenOrder,
+  onCloseDay,
 }: {
   businessDay: RestaurantBusinessDay | null;
   summary: RestaurantOrderSummary | null;
@@ -60,80 +62,97 @@ export function KassaActiveOrdersStrip({
   busy: string | null;
   canMarkPaid: boolean;
   canAdmin: boolean;
-  canReadReports: boolean;
   onMarkPaid: (order: RestaurantOrder) => void;
   onSendHeld: (order: RestaurantOrder) => void;
   onMoveOrder: (order: RestaurantOrder, status: RestaurantOrderStatus) => void;
+  onReopenOrder: (order: RestaurantOrder) => void;
+  onCloseDay: () => void;
 }) {
   if (!businessDay) return null;
 
+  const activeCount = summary?.activeOrderCount ?? activeOrders.length;
+  const unpaidCount = summary?.unpaidOrderCount ?? activeOrders.filter((order) => order.paymentStatus === 'unpaid').length;
+  const dayBlocked = activeCount > 0 || unpaidCount > 0;
+  const blocker = activeCount > 0
+    ? `${activeCount} aktiva ordrar`
+    : unpaidCount > 0
+      ? `${unpaidCount} obetalda`
+      : 'Redo att stänga';
+
   return (
-    <section className="shrink-0 border-t border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 py-2">
+    <section id="dagavslut" className="fluffy-active-orders-strip shrink-0 border-t border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 py-2">
       <div className="flex gap-3 overflow-x-auto">
-        <div className="flex min-w-[220px] items-center justify-between rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2">
-          <div>
-            <p className="text-xs text-[var(--ui-text-muted)]">{canReadReports ? 'Försäljning' : 'Aktiva ordrar'}</p>
-            <p className="text-lg font-semibold tabular-nums">
-              {canReadReports ? money(summary?.salesCents ?? 0) : activeOrders.length}
-            </p>
+        <div className="fluffy-active-order-summary flex min-w-[230px] items-center justify-between gap-3 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <CalendarCheck size={16} strokeWidth={1.75} />
+              <p className="text-sm font-semibold">Dagavslut</p>
+            </div>
+            <p className="mt-1 truncate text-xs text-[var(--ui-text-muted)]">{blocker}</p>
           </div>
-          {canReadReports ? (
-            <StatusBadge tone={(summary?.unpaidOrderCount ?? 0) > 0 ? 'warning' : 'success'}>
-              {summary?.unpaidOrderCount ?? 0} obetalda
-            </StatusBadge>
+          {canAdmin ? (
+            <Button
+              type="button"
+              variant={dayBlocked ? 'outline' : 'secondary'}
+              size="compact"
+              disabled={dayBlocked}
+              loading={busy === 'close-day'}
+              onClick={onCloseDay}
+            >
+              {dayBlocked ? 'Blockerad' : 'Stäng'}
+            </Button>
           ) : (
-            <StatusBadge tone="neutral">Rapport låst</StatusBadge>
+            <StatusBadge tone={dayBlocked ? 'warning' : 'success'}>{dayBlocked ? 'Blockerad' : 'Öppen'}</StatusBadge>
           )}
         </div>
 
         {activeOrders.length === 0 ? (
-          <div className="flex min-w-[220px] items-center rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2 text-sm text-[var(--ui-text-muted)]">
+          <div className="fluffy-active-order-empty flex min-w-[220px] items-center rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2 text-sm text-[var(--ui-text-muted)]">
             Inga aktiva ordrar.
           </div>
         ) : activeOrders.map((order) => {
           const next = orderNextAction(order);
           const nextDisabled = next?.status === 'completed' && order.paymentStatus !== 'paid';
+          const canReopen = order.isHeld && (order.kotStatus ?? 'not_sent') === 'not_sent';
           return (
             <article
               key={order.id}
-              className="flex min-w-[320px] items-center gap-3 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2"
+              className="fluffy-active-order-ticket flex min-w-[300px] items-center gap-3 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2"
             >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="min-w-0 flex-1 text-left"
+                disabled={!canReopen}
+                onClick={() => onReopenOrder(order)}
+              >
+                <div className="flex flex-wrap items-center gap-2">
                   <p className="font-semibold tabular-nums">#{order.orderNumber}</p>
                   <StatusBadge tone={STATUS_TONES[order.status]}>{STATUS_LABELS[order.status]}</StatusBadge>
                   <StatusBadge tone={order.paymentStatus === 'paid' ? 'success' : 'warning'}>
                     {order.paymentStatus === 'paid' ? 'Betald' : 'Obetald'}
                   </StatusBadge>
                   {order.isHeld ? <StatusBadge tone="neutral">Parkerad</StatusBadge> : null}
-                  {!order.isHeld && (order.kotStatus ?? 'not_sent') !== 'not_sent' ? (
-                    <StatusBadge tone={order.kotStatus === 'printed' ? 'success' : 'info'}>
-                      {order.kotStatus === 'printed' ? 'Print' : 'Kök'}
-                    </StatusBadge>
-                  ) : null}
                 </div>
                 <p className="mt-1 truncate text-xs text-[var(--ui-text-muted)]">
-                  {order.items.map((item) => `${item.quantity} ${item.name}`).join(', ')}
+                  {FULFILLMENT_LABELS[order.fulfillmentType]} · {order.items.map((item) => `${item.quantity} ${item.name}`).join(', ')}
                 </p>
-                {order.fulfillmentType === 'delivery' || order.source === 'public' || order.customerName || order.customerPhone ? (
-                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-[var(--ui-text-muted)]">
-                    {order.fulfillmentType === 'delivery' ? (
-                      <StatusBadge tone="warning">{FULFILLMENT_LABELS.delivery}</StatusBadge>
-                    ) : order.source === 'public' ? (
-                      <StatusBadge tone="info">{FULFILLMENT_LABELS[order.fulfillmentType]}</StatusBadge>
-                    ) : null}
-                    {order.customerName ? <span className="font-medium text-[var(--ui-text)]">{order.customerName}</span> : null}
-                    {order.customerPhone ? (
-                      <a href={`tel:${order.customerPhone.replace(/[^\d+]/g, '')}`} className="underline">
-                        {order.customerPhone}
-                      </a>
-                    ) : null}
-                  </div>
-                ) : null}
-                {order.fulfillmentType === 'delivery' && order.deliveryAddress ? (
-                  <p className="mt-0.5 text-xs font-medium text-[var(--ui-text)]">Adress: {order.deliveryAddress}</p>
-                ) : null}
-              </div>
+                <p className="mt-0.5 flex items-center gap-1 text-xs text-[var(--ui-text-muted)]">
+                  <Clock3 size={13} strokeWidth={1.75} />
+                  {timeLabel(order.createdAt)}
+                </p>
+              </button>
+
+              {canReopen ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="compact"
+                  onClick={() => onReopenOrder(order)}
+                >
+                  <RotateCcw data-icon="inline-start" />
+                  Öppna
+                </Button>
+              ) : null}
               {order.isHeld ? (
                 <Button
                   type="button"
@@ -142,7 +161,8 @@ export function KassaActiveOrdersStrip({
                   loading={busy === `send:${order.id}`}
                   onClick={() => onSendHeld(order)}
                 >
-                  Skicka
+                  <Send data-icon="inline-start" />
+                  Kök
                 </Button>
               ) : null}
               {canMarkPaid && order.paymentStatus !== 'paid' ? (

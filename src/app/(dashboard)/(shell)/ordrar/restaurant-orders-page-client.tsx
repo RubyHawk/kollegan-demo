@@ -134,7 +134,7 @@ export function RestaurantOrdersPageClient({
   }
 
   return (
-    <div data-brand="fluffys" className="space-y-6 p-4 md:p-6">
+    <div data-brand="fluffys" className="fluffy-portal-page space-y-6 p-4 md:p-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <p className="text-xs font-semibold uppercase text-[var(--ui-accent-active)]">Fluffy&apos;s</p>
@@ -182,13 +182,13 @@ export function RestaurantOrdersPageClient({
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)]">
+          <div className="fluffy-order-list overflow-hidden rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)]">
             {filteredOrders.length === 0 ? (
               <p className="p-4 text-sm text-[var(--ui-text-muted)]">Inga ordrar i vyn.</p>
             ) : (
               <div className="divide-y divide-[var(--ui-border)]">
                 {filteredOrders.map((order) => (
-                  <article key={order.id} className="grid gap-3 p-4 lg:grid-cols-[120px_1fr_auto] lg:items-center">
+                  <article key={order.id} className="fluffy-order-row grid gap-3 p-4 lg:grid-cols-[120px_1fr_auto] lg:items-center">
                     <div>
                       <p className="text-lg font-semibold tabular-nums text-[var(--ui-text)]">#{order.orderNumber}</p>
                       <p className="text-xs text-[var(--ui-text-muted)]">{timeLabel(order.createdAt)}</p>

@@ -244,8 +244,8 @@ export async function RestaurantDashboard({
   const dateLabel = stockholmLongDate(now);
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
-      <header className="relative overflow-hidden rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 md:p-6">
+    <div className="fluffy-portal-page space-y-6 p-4 md:p-6">
+      <header className="fluffy-portal-card-header relative overflow-hidden rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 md:p-6">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[var(--ui-accent-subtle)] via-transparent to-transparent"

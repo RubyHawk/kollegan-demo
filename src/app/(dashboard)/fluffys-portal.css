@@ -1,0 +1,319 @@
+[data-brand='fluffys'] {
+  --fluffy-display-font: var(--font-archivo-black), "Arial Black", "Helvetica Neue", Impact, sans-serif;
+  --fluffy-body-font: Arial, Helvetica, sans-serif;
+  --fluffy-board: oklch(0.170 0.014 70);
+  --fluffy-board-soft: oklch(0.225 0.016 70);
+  --fluffy-paper: oklch(0.985 0.022 83);
+  --fluffy-paper-aged: oklch(0.910 0.040 78);
+  --fluffy-orange: oklch(0.735 0.185 62);
+  --fluffy-purple: oklch(0.390 0.176 305);
+  --fluffy-red: oklch(0.440 0.175 27);
+  --fluffy-ink-line: oklch(0.170 0.014 70 / 0.18);
+  --ui-radius-sm: 4px;
+  --ui-radius-md: 6px;
+  --ui-radius-lg: 8px;
+  --ui-radius-panel: 8px;
+  --ui-radius-control: 6px;
+  font-family: var(--fluffy-body-font);
+  font-synthesis-weight: none;
+}
+
+.fluffy-portal-shell {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 12px 12px, oklch(0.170 0.014 70 / 0.045) 1px, transparent 1.5px),
+    linear-gradient(180deg, var(--ui-bg), oklch(0.902 0.042 78));
+  background-size: 26px 26px, auto;
+}
+
+.fluffy-portal-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, oklch(0.170 0.014 70 / 0.045), transparent 14%, transparent 86%, oklch(0.170 0.014 70 / 0.038)),
+    repeating-linear-gradient(178deg, transparent 0 34px, oklch(0.170 0.014 70 / 0.024) 35px 36px);
+  pointer-events: none;
+}
+
+.fluffy-portal-shell h1,
+.fluffy-portal-shell h2,
+.fluffy-portal-shell h3,
+.fluffy-pos-header h1,
+.fluffy-receipt__total,
+.fluffy-product-ticket__price {
+  font-family: var(--fluffy-display-font);
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.fluffy-portal-topbar {
+  position: relative;
+  --ui-border: oklch(0.985 0.022 83 / 0.14);
+  --ui-surface-hover: oklch(0.985 0.022 83 / 0.10);
+  --ui-text: var(--fluffy-paper);
+  --ui-text-secondary: oklch(0.985 0.022 83 / 0.80);
+  --ui-text-muted: oklch(0.985 0.022 83 / 0.62);
+  --ui-text-inverse: var(--fluffy-board);
+  --ui-accent: var(--fluffy-orange);
+  --ui-accent-hover: oklch(0.680 0.178 58);
+  --ui-accent-border: oklch(0.735 0.185 62 / 0.68);
+  background:
+    linear-gradient(90deg, var(--fluffy-board), var(--fluffy-board-soft)),
+    var(--fluffy-board);
+  color: var(--fluffy-paper);
+}
+
+.fluffy-portal-topbar::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--fluffy-purple), var(--fluffy-orange), var(--fluffy-purple));
+  opacity: 0.78;
+}
+
+.fluffy-shell-sidebar {
+  --ui-surface: var(--fluffy-board);
+  --ui-surface-subtle: oklch(0.985 0.022 83 / 0.08);
+  --ui-surface-hover: oklch(0.985 0.022 83 / 0.10);
+  --ui-surface-selected: oklch(0.735 0.185 62 / 0.16);
+  --ui-border: oklch(0.985 0.022 83 / 0.14);
+  --ui-border-subtle: oklch(0.985 0.022 83 / 0.10);
+  --ui-text: var(--fluffy-paper);
+  --ui-text-secondary: oklch(0.985 0.022 83 / 0.78);
+  --ui-text-muted: oklch(0.985 0.022 83 / 0.56);
+  --ui-text-inverse: var(--fluffy-board);
+  --ui-accent: var(--fluffy-orange);
+  --ui-accent-subtle: oklch(0.735 0.185 62 / 0.16);
+  --ui-accent-border: oklch(0.735 0.185 62 / 0.54);
+  background:
+    radial-gradient(circle at 14px 14px, oklch(0.985 0.022 83 / 0.055) 1px, transparent 1.7px),
+    var(--fluffy-board);
+  background-size: 26px 26px, auto;
+}
+
+.fluffy-shell-sidebar-header {
+  min-height: 64px;
+}
+
+.fluffy-portal-main {
+  background:
+    radial-gradient(circle at 14px 14px, oklch(0.170 0.014 70 / 0.040) 1px, transparent 1.6px),
+    linear-gradient(180deg, var(--ui-bg), oklch(0.905 0.040 78));
+  background-size: 26px 26px, auto;
+}
+
+.fluffy-portal-main > div:where(.space-y-5, .space-y-6) > header:first-child,
+.fluffy-portal-card-header {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius-panel);
+  background:
+    radial-gradient(circle at 14px 14px, oklch(0.170 0.014 70 / 0.045) 1px, transparent 1.6px),
+    linear-gradient(180deg, var(--ui-surface-raised), var(--ui-surface));
+  background-size: 20px 20px, auto;
+  box-shadow: var(--ui-shadow-raised);
+  padding: 20px;
+}
+
+.fluffy-portal-main > div:where(.space-y-5, .space-y-6) > header:first-child::after,
+.fluffy-portal-card-header::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--fluffy-purple), var(--fluffy-orange), var(--fluffy-purple));
+}
+
+.fluffy-portal-main > div:where(.space-y-5, .space-y-6) > header:first-child h1,
+.fluffy-portal-card-header h1 {
+  text-transform: uppercase;
+}
+
+.fluffy-pos-shell {
+  background:
+    radial-gradient(circle at 14px 14px, oklch(0.170 0.014 70 / 0.040) 1px, transparent 1.6px),
+    linear-gradient(180deg, var(--ui-bg), oklch(0.902 0.042 78));
+  background-size: 26px 26px, auto;
+}
+
+.fluffy-pos-rail {
+  --ui-surface: var(--fluffy-board);
+  --ui-surface-hover: oklch(0.985 0.022 83 / 0.10);
+  --ui-surface-selected: oklch(0.735 0.185 62 / 0.18);
+  --ui-border: oklch(0.985 0.022 83 / 0.14);
+  --ui-text-secondary: oklch(0.985 0.022 83 / 0.72);
+  --ui-text: var(--fluffy-paper);
+  --ui-accent: var(--fluffy-orange);
+  --ui-accent-border: oklch(0.735 0.185 62 / 0.60);
+}
+
+.fluffy-pos-header {
+  --ui-surface: var(--fluffy-board);
+  --ui-border: oklch(0.985 0.022 83 / 0.14);
+  --ui-text: var(--fluffy-paper);
+  --ui-text-muted: oklch(0.985 0.022 83 / 0.62);
+  --ui-text-secondary: oklch(0.985 0.022 83 / 0.78);
+  --ui-text-inverse: var(--fluffy-board);
+  --ui-accent: var(--fluffy-orange);
+  --ui-accent-active: var(--fluffy-orange);
+  --ui-accent-border: oklch(0.735 0.185 62 / 0.62);
+  background: var(--fluffy-board);
+  color: var(--fluffy-paper);
+}
+
+.fluffy-start-card,
+.fluffy-receipt,
+.fluffy-product-workbench,
+.fluffy-context-panel,
+.fluffy-active-order-summary,
+.fluffy-active-order-empty,
+.fluffy-active-order-ticket,
+.fluffy-kitchen-column,
+.fluffy-kitchen-ticket,
+.fluffy-order-row {
+  box-shadow: var(--ui-shadow-raised);
+}
+
+.fluffy-start-card,
+.fluffy-product-ticket,
+.fluffy-active-order-ticket,
+.fluffy-kitchen-ticket,
+.fluffy-order-row {
+  position: relative;
+  clip-path: polygon(0 8px, 8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px));
+}
+
+.fluffy-product-workbench {
+  background:
+    linear-gradient(180deg, oklch(0.985 0.022 83 / 0.72), transparent 260px),
+    transparent;
+}
+
+.fluffy-context-panel {
+  background:
+    radial-gradient(circle at 12px 12px, oklch(0.170 0.014 70 / 0.032) 1px, transparent 1.5px),
+    linear-gradient(180deg, var(--ui-surface-raised), var(--ui-surface));
+  background-size: 22px 22px, auto;
+}
+
+.fluffy-workbench-toolbar,
+.fluffy-category-strip,
+.fluffy-active-orders-strip {
+  background:
+    radial-gradient(circle at 11px 11px, oklch(0.170 0.014 70 / 0.035) 1px, transparent 1.5px),
+    var(--ui-surface-subtle);
+  background-size: 22px 22px, auto;
+}
+
+.fluffy-workbench-metric {
+  border-color: var(--ui-border-strong);
+  background: var(--ui-surface-raised);
+}
+
+.fluffy-category-pill {
+  text-transform: uppercase;
+}
+
+.fluffy-product-ticket {
+  border-color: var(--ui-border-strong);
+  background:
+    radial-gradient(circle at 0 15px, transparent 0 7px, var(--fluffy-ink-line) 7.5px 8px, transparent 8.5px) left top / 15px 32px repeat-y,
+    radial-gradient(circle at 100% 15px, transparent 0 7px, var(--fluffy-ink-line) 7.5px 8px, transparent 8.5px) right top / 15px 32px repeat-y,
+    radial-gradient(circle at 12px 12px, oklch(0.170 0.014 70 / 0.055) 0 1px, transparent 1.6px),
+    linear-gradient(180deg, var(--ui-surface-raised), var(--ui-surface-subtle));
+  background-size: 15px 32px, 15px 32px, 18px 18px, auto;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.fluffy-product-ticket:hover,
+.fluffy-product-ticket:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: var(--ui-shadow-raised);
+}
+
+.fluffy-product-ticket__media {
+  border-bottom: 1px solid var(--ui-border);
+  background:
+    linear-gradient(135deg, oklch(0.390 0.176 305 / 0.14), transparent),
+    var(--ui-surface-subtle);
+}
+
+.fluffy-product-ticket__price {
+  color: var(--fluffy-purple);
+  font-size: 1rem;
+  text-transform: uppercase;
+}
+
+.fluffy-receipt {
+  border-left: 1px solid var(--ui-border-strong);
+  background:
+    radial-gradient(circle at 12px 12px, oklch(0.170 0.014 70 / 0.035) 1px, transparent 1.5px),
+    linear-gradient(180deg, var(--ui-surface-raised), var(--ui-surface));
+  background-size: 22px 22px, auto;
+}
+
+.fluffy-receipt__total {
+  color: var(--fluffy-purple);
+  text-transform: uppercase;
+}
+
+.fluffy-receipt__lines,
+.fluffy-receipt__totals {
+  border-color: var(--ui-border-strong);
+  background: oklch(0.995 0.014 83 / 0.74);
+}
+
+.fluffy-receipt__lines article[aria-pressed="true"] {
+  box-shadow: inset 3px 0 0 var(--ui-accent);
+}
+
+.fluffy-active-order-summary,
+.fluffy-active-order-empty,
+.fluffy-active-order-ticket,
+.fluffy-order-row,
+.fluffy-kitchen-ticket {
+  border-color: var(--ui-border-strong);
+  background:
+    radial-gradient(circle at 12px 12px, oklch(0.170 0.014 70 / 0.045) 0 1px, transparent 1.6px),
+    var(--ui-surface-raised);
+  background-size: 18px 18px, auto;
+}
+
+.fluffy-kitchen-column {
+  overflow: hidden;
+  border-color: var(--ui-border-strong);
+}
+
+.fluffy-kitchen-column__head {
+  --ui-surface-subtle: var(--fluffy-board);
+  --ui-border: oklch(0.985 0.022 83 / 0.14);
+  --ui-text: var(--fluffy-paper);
+  --ui-text-muted: oklch(0.985 0.022 83 / 0.62);
+  background: var(--fluffy-board);
+  color: var(--fluffy-paper);
+}
+
+.fluffy-order-list {
+  border-color: var(--ui-border-strong);
+  background: var(--ui-surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fluffy-product-ticket {
+    transition-duration: 0.001ms;
+  }
+
+  .fluffy-product-ticket:hover,
+  .fluffy-product-ticket:focus-visible {
+    transform: none;
+  }
+}
