@@ -68,14 +68,13 @@ export function OpeningRoute({ hours }: { hours: OpeningHour[] }) {
   const status = getOpeningStatus(hours, now);
   const { dateText } = stockholmNow(now);
 
-  // The road as a time journey: green = open→now (0→gp), an orange band straddling the live
-  // marker, dashed black = still to come (the base layer showing through), and a short solid black
-  // run as closing approaches (SOLID_START→100). gp is capped before SOLID_START so the pin and its
-  // bubble never reach the closing segment or clip.
-  const SOLID_START = 86;
-  const gp = route.isOpen ? Math.min(82, Math.max(5, route.progress * 100)) : 0;
-  const orangeStart = route.isOpen ? Math.max(0, gp - 4) : 0;
-  const orangeLen = route.isOpen ? Math.min(12, Math.max(0, SOLID_START - 2 - orangeStart)) : 0;
+  // The road as a time journey at one consistent weight: solid green = open→now (0→gp), an orange
+  // band straddling the live marker, and the dashed base showing the remaining open time (now→close).
+  // gp is kept just off the ends so the pin and its bubble never clip.
+  const gp = route.isOpen ? Math.min(90, Math.max(4, route.progress * 100)) : 0;
+  const orangeStart = route.isOpen ? Math.max(0, gp - 5) : 0;
+  const orangeEnd = route.isOpen ? Math.min(99, gp + 5) : 0;
+  const orangeLen = Math.max(0, orangeEnd - orangeStart);
   const xPin = RX0 + (RX1 - RX0) * (gp / 100);
   const pinLeft = (xPin / VB_W) * 100;
   const pinTop = (waveY(xPin) / VB_H) * 100;
@@ -120,12 +119,6 @@ export function OpeningRoute({ hours }: { hours: OpeningHour[] }) {
             <span className="fluffy-routecard__road-wrap">
               <svg className="fluffy-routecard__road" viewBox={`0 0 ${VB_W} ${VB_H}`} preserveAspectRatio="none" aria-hidden="true">
                 <path className="fluffy-routecard__road-base" d={ROAD_D} pathLength={100} />
-                <path
-                  className="fluffy-routecard__road-solid"
-                  d={ROAD_D}
-                  pathLength={100}
-                  style={{ strokeDasharray: `0 ${SOLID_START} ${100 - SOLID_START} 100` }}
-                />
                 <path className="fluffy-routecard__road-green" d={ROAD_D} pathLength={100} style={{ strokeDasharray: `${gp} ${100 - gp}` }} />
                 <path
                   className="fluffy-routecard__road-orange"

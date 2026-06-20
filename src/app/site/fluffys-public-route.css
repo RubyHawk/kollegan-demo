@@ -149,27 +149,22 @@
   stroke-linejoin: round;
 }
 
-/* base = the "still to come" road: black dashes that show through after the marker */
+/* One consistent road weight; only colour + dashes separate past / now / future. */
+/* base = the remaining open time: evenly dashed, lighter, shows through after the marker */
 .fluffy-routecard__road-base {
-  stroke: rgba(9, 8, 7, 0.88);
-  stroke-width: 5.5;
-  stroke-dasharray: 9 8;
-}
-
-/* a short solid black run as closing approaches */
-.fluffy-routecard__road-solid {
-  stroke: rgba(9, 8, 7, 0.92);
+  stroke: rgba(9, 8, 7, 0.6);
   stroke-width: 7;
+  stroke-dasharray: 1.5 4.5;
 }
 
 .fluffy-routecard__road-green {
   stroke: #1f7a46;
-  stroke-width: 8;
+  stroke-width: 7.5;
 }
 
 .fluffy-routecard__road-orange {
   stroke: var(--fp-orange);
-  stroke-width: 8.5;
+  stroke-width: 8;
 }
 
 /* the live pin (HTML overlay → crisp at any card width) */
