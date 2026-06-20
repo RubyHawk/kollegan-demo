@@ -1,24 +1,31 @@
 'use client';
 
+import { CalendarDays, ChefHat, CreditCard, Info, Minus, Plus, ShoppingBag, Trash2, Utensils } from 'lucide-react';
 import { Button } from '@shared/ui/button';
 import { InlineAlert } from '@shared/ui/inline-alert';
-import { Input } from '@shared/ui/input';
-import { Textarea } from '@shared/ui/textarea';
 import { cn } from '@shared/lib/utils';
-import type { RestaurantFulfillmentType, RestaurantPaymentMethod } from '@shared/lib/api/restaurant-orders.api';
+import type { RestaurantMenuItem } from '@shared/lib/api/restaurant.api';
+import type { RestaurantFulfillmentType } from '@shared/lib/api/restaurant-orders.api';
 import { type DraftItem, modifierSummary, money } from './kassa-helpers';
 
-type CreateOrderAction = 'hold' | 'send' | 'print';
+type CreateOrderAction = 'hold' | 'send' | 'print' | 'pay';
 
-const PAYMENT_METHODS: Array<{ value: RestaurantPaymentMethod; label: string }> = [
-  { value: 'card', label: 'Kort' },
-  { value: 'swish', label: 'Swish' },
-  { value: 'cash', label: 'Kontant' },
-  { value: 'other', label: 'Annat' },
-];
+export type QuickExtra = {
+  label: string;
+  item: RestaurantMenuItem | null;
+};
+
+const FULFILLMENT_OPTIONS = [
+  { value: 'counter', label: 'Disk', icon: Utensils },
+  { value: 'takeaway', label: 'Takeaway', icon: ShoppingBag },
+  { value: 'dine_in', label: 'Bord', icon: Utensils },
+  { value: 'booking_linked', label: 'Bokning', icon: CalendarDays },
+] as const;
 
 export function KassaReceiptPanel({
+  orderNumber,
   draftItems,
+  selectedDraftId,
   draftTotalCents,
   discountCents,
   taxCents,
@@ -26,34 +33,22 @@ export function KassaReceiptPanel({
   error,
   success,
   fulfillmentType,
-  tableLabel,
-  bookingReference,
-  customName,
-  customPrice,
-  orderNote,
-  discountInput,
-  paymentMethod,
-  paidNow,
+  quickExtras,
   canMarkPaid,
   busy,
   online,
   onClear,
+  onOpenOrderInfo,
   onFulfillmentTypeChange,
-  onTableLabelChange,
-  onBookingReferenceChange,
+  onSelectDraftItem,
   onChangeQuantity,
-  onChangeItemNote,
-  onCustomNameChange,
-  onCustomPriceChange,
-  onOrderNoteChange,
-  onDiscountInputChange,
-  onAddCustomItem,
-  onPaidNowChange,
-  onPaymentMethodChange,
-  onSubmitOrder,
+  onRemoveDraftItem,
+  onAddQuickExtra,
   onSubmitOrderAction,
 }: {
+  orderNumber: number | null;
   draftItems: DraftItem[];
+  selectedDraftId: string | null;
   draftTotalCents: number;
   discountCents: number;
   taxCents: number;
@@ -61,224 +56,187 @@ export function KassaReceiptPanel({
   error: string;
   success: string;
   fulfillmentType: RestaurantFulfillmentType;
-  tableLabel: string;
-  bookingReference: string;
-  customName: string;
-  customPrice: string;
-  orderNote: string;
-  discountInput: string;
-  paymentMethod: RestaurantPaymentMethod;
-  paidNow: boolean;
+  quickExtras: QuickExtra[];
   canMarkPaid: boolean;
   busy: string | null;
   online: boolean;
   onClear: () => void;
+  onOpenOrderInfo: () => void;
   onFulfillmentTypeChange: (value: RestaurantFulfillmentType) => void;
-  onTableLabelChange: (value: string) => void;
-  onBookingReferenceChange: (value: string) => void;
+  onSelectDraftItem: (draftId: string) => void;
   onChangeQuantity: (draftId: string, delta: number) => void;
-  onChangeItemNote: (draftId: string, note: string) => void;
-  onCustomNameChange: (value: string) => void;
-  onCustomPriceChange: (value: string) => void;
-  onOrderNoteChange: (value: string) => void;
-  onDiscountInputChange: (value: string) => void;
-  onAddCustomItem: () => void;
-  onPaidNowChange: (paid: boolean) => void;
-  onPaymentMethodChange: (method: RestaurantPaymentMethod) => void;
-  onSubmitOrder: () => void;
+  onRemoveDraftItem: (draftId: string) => void;
+  onAddQuickExtra: (item: RestaurantMenuItem) => void;
   onSubmitOrderAction: (action: CreateOrderAction) => void;
 }) {
   return (
-    <aside className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] bg-[var(--ui-surface)]">
-      <section className="min-h-0 overflow-y-auto p-4">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase text-[var(--ui-text-muted)]">Kvitto</p>
-            <p className="text-2xl font-semibold tabular-nums">{money(totalCents)}</p>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="compact"
-            disabled={draftItems.length === 0}
-            onClick={onClear}
-          >
-            Rensa
-          </Button>
+    <aside className="fluffy-receipt grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] bg-[var(--ui-surface)]">
+      <header className="border-b border-[var(--ui-border)] p-4">
+        <div className="mb-4 grid grid-cols-4 gap-2">
+          {FULFILLMENT_OPTIONS.map((option) => {
+            const Icon = option.icon;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => onFulfillmentTypeChange(option.value)}
+                className={cn(
+                  'flex h-12 items-center justify-center gap-2 rounded-[var(--ui-radius-lg)] border px-2 text-sm font-semibold transition-colors',
+                  fulfillmentType === option.value
+                    ? 'border-[var(--ui-accent-border)] bg-[var(--ui-accent)] text-[var(--ui-text-inverse)]'
+                    : 'border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)] hover:bg-[var(--ui-surface-hover)]',
+                )}
+              >
+                <Icon size={16} strokeWidth={1.75} />
+                {option.label}
+              </button>
+            );
+          })}
         </div>
 
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase text-[var(--ui-text-muted)]">Order</p>
+            <h2 className="text-xl font-bold">{orderNumber ? `Order #${orderNumber}` : 'Ny order'}</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" size="compact" className="h-10 px-3" onClick={onOpenOrderInfo}>
+              <Info data-icon="inline-start" />
+              Info
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="compact"
+              className="h-10 px-3"
+              disabled={draftItems.length === 0}
+              onClick={onClear}
+            >
+              Rensa
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <section className="min-h-0 overflow-y-auto p-4">
         {error ? <InlineAlert tone="danger" className="mb-3">{error}</InlineAlert> : null}
         {success ? <InlineAlert tone="success" className="mb-3">{success}</InlineAlert> : null}
 
-        <div className="mb-3 grid grid-cols-2 gap-2">
-          {([
-            ['counter', 'Disk'],
-            ['takeaway', 'Takeaway'],
-            ['dine_in', 'Bord'],
-            ['booking_linked', 'Bokning'],
-          ] as const).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => onFulfillmentTypeChange(value)}
+        <div className="fluffy-receipt__lines rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)]">
+          {draftItems.length === 0 ? (
+            <p className="p-5 text-sm text-[var(--ui-text-muted)]">Välj produkter för att bygga ordern.</p>
+          ) : draftItems.map((item) => (
+            <article
+              key={item.draftId}
+              role="button"
+              tabIndex={0}
+              aria-pressed={selectedDraftId === item.draftId}
+              onClick={() => onSelectDraftItem(item.draftId)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onSelectDraftItem(item.draftId);
+                }
+              }}
               className={cn(
-                'h-11 rounded-[var(--ui-radius-md)] border text-sm font-semibold transition-colors',
-                fulfillmentType === value
-                  ? 'border-[var(--ui-accent-border)] bg-[var(--ui-surface-selected)] text-[var(--ui-accent)]'
-                  : 'border-[var(--ui-border)] bg-[var(--ui-bg)] text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface-hover)]',
+                'fluffy-receipt__line grid cursor-pointer gap-2 border-b border-[var(--ui-border)] p-3 outline-none transition-colors last:border-b-0 focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]',
+                selectedDraftId === item.draftId ? 'bg-[var(--ui-surface-selected)]' : 'hover:bg-[var(--ui-surface-hover)]',
               )}
             >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {fulfillmentType === 'dine_in' ? (
-          <Input
-            value={tableLabel}
-            onChange={(event) => onTableLabelChange(event.target.value)}
-            placeholder="Bord eller plats"
-            maxLength={60}
-            className="mb-3 bg-[var(--ui-bg)]"
-          />
-        ) : null}
-        {fulfillmentType === 'booking_linked' ? (
-          <Input
-            value={bookingReference}
-            onChange={(event) => onBookingReferenceChange(event.target.value)}
-            placeholder="Bokningsnamn eller referens"
-            maxLength={120}
-            className="mb-3 bg-[var(--ui-bg)]"
-          />
-        ) : null}
-
-        <div className="divide-y divide-[var(--ui-border)] rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)]">
-          {draftItems.length === 0 ? (
-            <p className="p-4 text-sm text-[var(--ui-text-muted)]">Inga rader.</p>
-          ) : draftItems.map((item) => (
-            <div key={item.draftId} className="grid gap-2 p-3">
-              <div className="flex items-center gap-3">
+              <div className="flex items-start gap-3">
+                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-[var(--fluffy-board)] text-[11px] font-bold text-[var(--ui-text-inverse)]">
+                  {item.quantity}
+                </span>
+                <div className="grid size-16 shrink-0 overflow-hidden rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)]">
+                  {item.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="grid place-items-center text-[10px] font-semibold text-[var(--ui-text-muted)]">Fluffy&apos;s</span>
+                  )}
+                </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{item.name}</p>
-                  <p className="text-xs text-[var(--ui-text-muted)]">
-                    {[item.variantName, modifierSummary(item.selectedModifiers ?? [])].filter(Boolean).join(' · ') || `${money(item.unitPriceCents)} styck`}
-                  </p>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold">{item.name}</p>
+                      <p className="mt-0.5 truncate text-xs text-[var(--ui-text-muted)]">
+                        {[item.variantName, modifierSummary(item.selectedModifiers ?? [])].filter(Boolean).join(' + ') || `${money(item.unitPriceCents)} styck`}
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-right text-sm font-bold tabular-nums">{money(item.quantity * item.unitPriceCents)}</p>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <div className="flex h-8 items-center overflow-hidden rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)]">
+                      <button type="button" className="grid size-8 place-items-center" onClick={(event) => { event.stopPropagation(); onChangeQuantity(item.draftId, -1); }} aria-label="Minska antal">
+                        <Minus size={14} strokeWidth={1.75} />
+                      </button>
+                      <span className="w-8 text-center text-sm font-semibold tabular-nums">{item.quantity}</span>
+                      <button type="button" className="grid size-8 place-items-center" onClick={(event) => { event.stopPropagation(); onChangeQuantity(item.draftId, 1); }} aria-label="Öka antal">
+                        <Plus size={14} strokeWidth={1.75} />
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      className="grid size-8 place-items-center rounded-[var(--ui-radius-md)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-danger-text)]"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onRemoveDraftItem(item.draftId);
+                      }}
+                      aria-label={`Ta bort ${item.name}`}
+                    >
+                      <Trash2 size={14} strokeWidth={1.75} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex h-10 items-center overflow-hidden rounded-[var(--ui-radius-md)] border border-[var(--ui-border)]">
-                  <button type="button" className="h-10 w-10 text-lg" onClick={() => onChangeQuantity(item.draftId, -1)}>-</button>
-                  <span className="w-10 text-center text-sm font-semibold tabular-nums">{item.quantity}</span>
-                  <button type="button" className="h-10 w-10 text-lg" onClick={() => onChangeQuantity(item.draftId, 1)}>+</button>
-                </div>
-                <p className="w-20 text-right text-sm font-semibold tabular-nums">{money(item.quantity * item.unitPriceCents)}</p>
               </div>
-              <Input
-                value={item.note ?? ''}
-                onChange={(event) => onChangeItemNote(item.draftId, event.target.value)}
-                placeholder="Radnotering"
-                maxLength={500}
-                className="h-9 bg-[var(--ui-bg)]"
-              />
-            </div>
+            </article>
           ))}
         </div>
 
-        <div className="mt-3 grid grid-cols-[1fr_92px_auto] gap-2">
-          <Input
-            value={customName}
-            onChange={(event) => onCustomNameChange(event.target.value)}
-            placeholder="Fri rad"
-          />
-          <Input
-            value={customPrice}
-            onChange={(event) => onCustomPriceChange(event.target.value)}
-            placeholder="Pris"
-            inputMode="decimal"
-          />
-          <Button type="button" variant="secondary" size="compact" onClick={onAddCustomItem}>
-            Lägg till
-          </Button>
-        </div>
-
-        <Textarea
-          value={orderNote}
-          onChange={(event) => onOrderNoteChange(event.target.value)}
-          placeholder="Ordernotering"
-          maxLength={1000}
-          className="mt-3 min-h-20 resize-none bg-[var(--ui-bg)]"
-        />
+        <section className="mt-4 flex flex-col gap-2">
+          <p className="text-xs font-semibold uppercase text-[var(--ui-text-muted)]">Snabba tillägg</p>
+          <div className="grid grid-cols-2 gap-2">
+            {quickExtras.map((extra) => (
+              <button
+                key={extra.label}
+                type="button"
+                disabled={!extra.item}
+                onClick={() => {
+                  if (extra.item) onAddQuickExtra(extra.item);
+                }}
+                className="min-h-10 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 text-left text-xs font-semibold transition-colors hover:bg-[var(--ui-surface-hover)] disabled:cursor-not-allowed disabled:opacity-55"
+              >
+                <span className="block truncate">+ {extra.label}</span>
+                <span className="text-[11px] text-[var(--ui-text-muted)]">
+                  {extra.item ? 'Lägg till' : 'Saknas i meny'}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
       </section>
 
-      <section className="border-t border-[var(--ui-border)] p-4">
-        <div className="mb-3 space-y-1 rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-bg)] p-3 text-sm">
+      <footer className="border-t border-[var(--ui-border)] p-4">
+        <div className="fluffy-receipt__totals mb-3 flex flex-col gap-1 rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3 text-sm">
           <div className="flex justify-between gap-3">
             <span className="text-[var(--ui-text-muted)]">Delsumma</span>
             <span className="font-medium tabular-nums">{money(draftTotalCents)}</span>
           </div>
-          <div className="grid grid-cols-[1fr_112px] items-center gap-2">
-            <span className="text-[var(--ui-text-muted)]">Rabatt</span>
-            <Input
-              value={discountInput}
-              onChange={(event) => onDiscountInputChange(event.target.value)}
-              placeholder="0"
-              inputMode="decimal"
-              className="h-9 bg-[var(--ui-surface)] text-right"
-            />
-          </div>
+          {discountCents > 0 ? (
+            <div className="flex justify-between gap-3">
+              <span className="text-[var(--ui-text-muted)]">Rabatt</span>
+              <span className="font-medium tabular-nums">-{money(discountCents)}</span>
+            </div>
+          ) : null}
           <div className="flex justify-between gap-3">
-            <span className="text-[var(--ui-text-muted)]">Rabatt summa</span>
-            <span className="font-medium tabular-nums">-{money(discountCents)}</span>
-          </div>
-          <div className="flex justify-between gap-3">
-            <span className="text-[var(--ui-text-muted)]">Moms 12% ingår</span>
+            <span className="text-[var(--ui-text-muted)]">Moms 12%</span>
             <span className="font-medium tabular-nums">{money(taxCents)}</span>
           </div>
-          <div className="flex justify-between gap-3 border-t border-[var(--ui-border)] pt-2 text-base font-semibold">
-            <span>Totalt</span>
-            <span className="tabular-nums">{money(totalCents)}</span>
+          <div className="flex items-baseline justify-between gap-3 border-t border-[var(--ui-border)] pt-2 text-base font-bold">
+            <span>Total</span>
+            <span className="fluffy-receipt__total text-2xl tabular-nums">{money(totalCents)}</span>
           </div>
-        </div>
-
-        <div className="mb-3 flex rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] p-1">
-          <button
-            type="button"
-            disabled={!canMarkPaid}
-            onClick={() => onPaidNowChange(true)}
-            className={cn(
-              'h-10 flex-1 rounded-[calc(var(--ui-radius-md)-2px)] text-sm font-semibold disabled:cursor-not-allowed disabled:text-[var(--ui-text-disabled)]',
-              paidNow ? 'bg-[var(--ui-accent)] text-[var(--ui-text-inverse)]' : 'text-[var(--ui-text-secondary)]',
-            )}
-          >
-            Betald
-          </button>
-          <button
-            type="button"
-            onClick={() => onPaidNowChange(false)}
-            className={cn(
-              'h-10 flex-1 rounded-[calc(var(--ui-radius-md)-2px)] text-sm font-semibold',
-              !paidNow ? 'bg-[var(--ui-accent)] text-[var(--ui-text-inverse)]' : 'text-[var(--ui-text-secondary)]',
-            )}
-          >
-            Obetald
-          </button>
-        </div>
-
-        <div className="mb-3 grid grid-cols-4 gap-2">
-          {PAYMENT_METHODS.map((method) => (
-            <button
-              key={method.value}
-              type="button"
-              disabled={!canMarkPaid || !paidNow}
-              onClick={() => onPaymentMethodChange(method.value)}
-              className={cn(
-                'h-10 rounded-[var(--ui-radius-md)] border text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50',
-                paidNow && paymentMethod === method.value
-                  ? 'border-[var(--ui-accent-border)] bg-[var(--ui-accent-subtle)] text-[var(--ui-accent)]'
-                  : 'border-[var(--ui-border)] bg-[var(--ui-bg)] text-[var(--ui-text-secondary)]',
-              )}
-            >
-              {method.label}
-            </button>
-          ))}
         </div>
 
         {!online ? (
@@ -290,34 +248,35 @@ export function KassaReceiptPanel({
         <Button
           type="button"
           size="lg"
-          className="mb-2 h-14 w-full text-base"
+          className="fluffy-action-send mb-2 h-12 w-full text-base font-bold"
           disabled={draftItems.length === 0 || !online}
           loading={busy === 'create-order'}
-          onClick={onSubmitOrder}
+          onClick={() => onSubmitOrderAction('send')}
         >
+          <ChefHat data-icon="inline-start" />
           Skicka till kök
         </Button>
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={draftItems.length === 0 || !online}
-            loading={busy === 'create-order'}
-            onClick={() => onSubmitOrderAction('hold')}
-          >
-            Parkera
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={draftItems.length === 0 || !online}
-            loading={busy === 'create-order'}
-            onClick={() => onSubmitOrderAction('print')}
-          >
-            KOT/Print
-          </Button>
-        </div>
-      </section>
+        <Button
+          type="button"
+          className="fluffy-action-pay mb-2 h-12 w-full text-base font-bold"
+          disabled={draftItems.length === 0 || !online || !canMarkPaid}
+          loading={busy === 'create-order'}
+          onClick={() => onSubmitOrderAction('pay')}
+        >
+          <CreditCard data-icon="inline-start" />
+          Betala
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 w-full"
+          disabled={draftItems.length === 0 || !online}
+          loading={busy === 'create-order'}
+          onClick={() => onSubmitOrderAction('hold')}
+        >
+          Parkera
+        </Button>
+      </footer>
     </aside>
   );
 }

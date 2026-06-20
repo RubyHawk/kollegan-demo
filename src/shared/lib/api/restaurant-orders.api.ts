@@ -146,6 +146,9 @@ export interface UpdateRestaurantOrderPayload {
   tableLabel?: string | null;
   bookingReference?: string | null;
   note?: string | null;
+  discountCents?: number | null;
+  taxRateBps?: number | null;
+  items?: CreateRestaurantOrderItemPayload[];
   isHeld?: boolean;
   kotStatus?: RestaurantKotStatus;
   printReceipt?: boolean;

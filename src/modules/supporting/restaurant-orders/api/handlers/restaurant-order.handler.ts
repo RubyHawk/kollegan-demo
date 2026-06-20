@@ -78,6 +78,9 @@ const UpdateOrderSchema = z.object({
   tableLabel: z.string().max(60).nullable().optional(),
   bookingReference: z.string().max(120).nullable().optional(),
   note: z.string().max(1000).nullable().optional(),
+  discountCents: z.number().int().min(0).max(1_000_000).nullable().optional(),
+  taxRateBps: z.number().int().min(0).max(25_000).nullable().optional(),
+  items: z.array(OrderItemSchema).min(1).max(80).optional(),
   isHeld: z.boolean().optional(),
   kotStatus: KotStatusSchema.optional(),
   printReceipt: z.boolean().optional(),
@@ -196,8 +199,8 @@ export const handleCreateRestaurantOrder = createHandler(
   },
   async ({ auth, body }) => {
     const orgId = requireOrg(auth);
-    const { canMarkPaid } = await permissionFlags(auth);
-    const order = await createRestaurantOrder(orgId, auth!.sub, body!, { canMarkPaid });
+    const flags = await permissionFlags(auth);
+    const order = await createRestaurantOrder(orgId, auth!.sub, body!, flags);
     return created({ order }, `/api/v1/restaurant/orders/${order.id}`);
   },
 );

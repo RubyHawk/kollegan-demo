@@ -142,6 +142,29 @@ describe('restaurant order service', () => {
     expect(restaurantOrderRepository.createOrder).not.toHaveBeenCalled();
   });
 
+  it('requires admin permission to create an order with a discount', async () => {
+    await expect(createRestaurantOrder('org_1', 'user_1', {
+      discountCents: 500,
+      items: [{ menuItemId: 'menu_1', quantity: 1 }],
+    }, { canMarkPaid: true, canAdmin: false })).rejects.toMatchObject({
+      problem: { status: 403 },
+    });
+    expect(restaurantOrderRepository.createOrder).not.toHaveBeenCalled();
+  });
+
+  it('rejects unavailable portal menu items before creating an order', async () => {
+    vi.mocked(restaurantOrderRepository.findMenuItemsByIds).mockResolvedValue([
+      { id: 'menu_1', name: 'Kebabsub', priceCents: 6_000, currency: 'SEK', isAvailable: false, tags: [] },
+    ]);
+
+    await expect(createRestaurantOrder('org_1', 'user_1', {
+      items: [{ menuItemId: 'menu_1', quantity: 1 }],
+    }, { canMarkPaid: true, canAdmin: true })).rejects.toMatchObject({
+      problem: { status: 400 },
+    });
+    expect(restaurantOrderRepository.createOrder).not.toHaveBeenCalled();
+  });
+
   it('prevents closing the day while active or unpaid orders remain', async () => {
     vi.mocked(restaurantOrderRepository.countBusinessDayBlockingOrders).mockResolvedValue({ activeCount: 1, unpaidCount: 0 });
 
@@ -250,6 +273,94 @@ describe('restaurant order service', () => {
       kotStatus: 'sent',
       isHeld: false,
     }));
+  });
+
+  it('replaces items only on held orders that have not been sent to the kitchen', async () => {
+    vi.mocked(restaurantOrderRepository.getOrderById).mockResolvedValue({
+      ...order,
+      isHeld: true,
+      kotStatus: 'not_sent',
+      discountCents: 0,
+      taxRateBps: 1200,
+    });
+
+    await expect(updateRestaurantOrder('org_1', 'order_1', 'user_1', {
+      items: [{ menuItemId: 'menu_1', quantity: 2, note: 'Extra sås' }],
+      isHeld: true,
+      kotStatus: 'not_sent',
+    }, { canMarkPaid: true, canAdmin: true })).resolves.toEqual(order);
+
+    expect(restaurantOrderRepository.updateOrder).toHaveBeenCalledWith('org_1', 'order_1', 'user_1', expect.objectContaining({
+      isHeld: true,
+      items: [expect.objectContaining({
+        menuItemId: 'menu_1',
+        quantity: 2,
+        unitPriceCents: 6_000,
+        lineTotalCents: 12_000,
+        note: 'Extra sås',
+      })],
+      totals: expect.objectContaining({
+        subtotalCents: 12_000,
+        totalCents: 12_000,
+      }),
+    }));
+  });
+
+  it('recalculates totals when discount or tax rate changes without replacing items', async () => {
+    vi.mocked(restaurantOrderRepository.getOrderById).mockResolvedValue({
+      ...order,
+      subtotalCents: 13_400,
+      discountCents: 0,
+      taxCents: 1_436,
+      taxRateBps: 1200,
+      totalCents: 13_400,
+      items: [{
+        id: 'item_1',
+        menuItemId: 'menu_1',
+        name: 'QA Margarita',
+        quantity: 2,
+        variantName: null,
+        variantPriceCents: null,
+        selectedModifiers: [],
+        modifierTotalCents: 0,
+        unitPriceCents: 6_700,
+        lineTotalCents: 13_400,
+        note: null,
+        sortOrder: 0,
+      }],
+    });
+
+    await expect(updateRestaurantOrder('org_1', 'order_1', 'manager_1', {
+      discountCents: 500,
+      taxRateBps: 2500,
+    }, { canMarkPaid: true, canAdmin: true })).resolves.toEqual(order);
+
+    expect(restaurantOrderRepository.updateOrder).toHaveBeenCalledWith('org_1', 'order_1', 'manager_1', expect.objectContaining({
+      items: undefined,
+      totals: expect.objectContaining({
+        subtotalCents: 13_400,
+        discountCents: 500,
+        taxCents: 2_580,
+        taxRateBps: 2500,
+        totalCents: 12_900,
+        currency: 'SEK',
+      }),
+    }));
+  });
+
+  it('blocks item replacement after a held order has been sent to the kitchen', async () => {
+    vi.mocked(restaurantOrderRepository.getOrderById).mockResolvedValue({
+      ...order,
+      isHeld: true,
+      kotStatus: 'sent',
+    });
+
+    await expect(updateRestaurantOrder('org_1', 'order_1', 'user_1', {
+      items: [{ menuItemId: 'menu_1', quantity: 1 }],
+    }, { canMarkPaid: true, canAdmin: true })).rejects.toMatchObject({
+      problem: { status: 409 },
+    });
+    expect(restaurantOrderRepository.updateOrder).not.toHaveBeenCalled();
   });
 });
 

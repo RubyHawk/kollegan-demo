@@ -1,50 +1,77 @@
 /*
  * Fluffy's portal skin.
  *
- * Re-skins the authenticated portal shell for the Fluffy's tenant only. The
- * brand key is resolved per-org in the dashboard shell layout and surfaced as
- * data-brand="fluffys" on the app-shell root, so Soleria / offert hosts never
- * match this block and stay byte-for-byte unchanged.
+ * This re-skins the authenticated shell only when the resolved organization
+ * brand key is surfaced as data-brand="fluffys". Soleria and other tenants do
+ * not match this selector.
  *
- * The portal chrome consumes --ui-* tokens directly; shared shadcn primitives
- * read the bridge tokens (--background / --card / --primary / ...) and a few
- * legacy components read the base aliases (--accent / --surface / ...). All
- * three layers are re-pointed at the overridden --ui-* values here so no
- * Soleria blue leaks anywhere under the Fluffy's shell, in light or dark mode.
- *
- * Palette: warm paper/cream surfaces, ink text, tomato accent (matching the
- * public fluffys.se site and the portal mark), with a warm focus highlight.
- * Status tints (success/warning/danger/info) inherit the accessible defaults.
+ * Palette: white POS paper, black counter-board surfaces, and Fluffy orange
+ * action states.
  */
 
 [data-brand='fluffys'] {
-  /* ── Canonical UI tokens — warm light ── */
-  --ui-bg: #f7ecd9;
-  --ui-surface: #fffdf7;
-  --ui-surface-subtle: #f4e9d4;
-  --ui-surface-raised: #fffefb;
-  --ui-surface-hover: #efe2c9;
-  --ui-surface-active: #e7d6b8;
-  --ui-surface-selected: #f8ddd2;
-  --ui-border: #ddcaa4;
-  --ui-border-subtle: #e9dcc1;
-  --ui-border-strong: #c7ad7e;
-  --ui-text: #171412;
-  --ui-text-secondary: #463c33;
-  --ui-text-muted: #7c6e5e;
-  --ui-text-disabled: #aa9c87;
-  --ui-text-inverse: #fffaf0;
-  --ui-accent: #d65332;
-  --ui-accent-hover: #c0492b;
-  --ui-accent-active: #9f3828;
-  --ui-accent-subtle: #f8ddd2;
-  --ui-accent-border: #ecb3a0;
-  --ui-focus: #c2492b;
-  --ui-overlay: rgb(23 20 18 / 0.42);
-  --ui-shadow-raised: 0 1px 2px rgb(23 20 18 / 0.08), 0 8px 24px rgb(23 20 18 / 0.06);
-  --ui-shadow-dialog: 0 18px 60px rgb(23 20 18 / 0.20);
+  /* Fluffy POS neutrals and orange action system. */
+  --fluffy-board: oklch(0.145 0.014 230);
+  --fluffy-board-soft: oklch(0.190 0.016 230);
+  --fluffy-orange: oklch(0.705 0.205 43);
+  --fluffy-orange-hover: oklch(0.655 0.205 40);
+  --fluffy-orange-active: oklch(0.600 0.195 38);
+  --fluffy-paper: oklch(0.994 0.002 95);
+  --fluffy-paper-soft: oklch(0.970 0.004 95);
+  --fluffy-paper-raised: oklch(0.998 0.001 95);
+  --fluffy-paper-hover: oklch(0.945 0.010 92);
+  --fluffy-paper-active: oklch(0.918 0.014 90);
+  --fluffy-paper-selected: oklch(0.938 0.032 50);
+  --fluffy-paper-border: oklch(0.865 0.010 90);
+  --fluffy-paper-border-subtle: oklch(0.920 0.006 90);
+  --fluffy-paper-border-strong: oklch(0.760 0.016 85);
+  --fluffy-ink: oklch(0.155 0.012 230);
+  --fluffy-ink-secondary: oklch(0.315 0.014 230);
+  --fluffy-ink-muted: oklch(0.480 0.010 230);
 
-  /* ── Base aliases (mirror ui-aliases.css against the warm tokens) ── */
+  /* Canonical UI tokens, light POS. */
+  --ui-bg: var(--fluffy-paper);
+  --ui-surface: var(--fluffy-paper);
+  --ui-surface-subtle: var(--fluffy-paper-soft);
+  --ui-surface-raised: var(--fluffy-paper-raised);
+  --ui-surface-hover: var(--fluffy-paper-hover);
+  --ui-surface-active: var(--fluffy-paper-active);
+  --ui-surface-selected: var(--fluffy-paper-selected);
+  --ui-border: var(--fluffy-paper-border);
+  --ui-border-subtle: var(--fluffy-paper-border-subtle);
+  --ui-border-strong: var(--fluffy-paper-border-strong);
+  --ui-text: var(--fluffy-ink);
+  --ui-text-secondary: var(--fluffy-ink-secondary);
+  --ui-text-muted: var(--fluffy-ink-muted);
+  --ui-text-disabled: oklch(0.660 0.008 230);
+  --ui-text-inverse: oklch(0.994 0.002 95);
+  --ui-accent: var(--fluffy-orange);
+  --ui-accent-hover: var(--fluffy-orange-hover);
+  --ui-accent-active: var(--fluffy-orange-active);
+  --ui-accent-subtle: oklch(0.945 0.055 48);
+  --ui-accent-border: oklch(0.770 0.130 44);
+  --ui-focus: oklch(0.695 0.180 58);
+  --ui-success-bg: oklch(0.920 0.060 150);
+  --ui-success-text: oklch(0.310 0.116 150);
+  --ui-success-border: oklch(0.735 0.080 150);
+  --ui-warning-bg: oklch(0.895 0.100 70);
+  --ui-warning-text: oklch(0.280 0.075 60);
+  --ui-warning-border: oklch(0.680 0.130 65);
+  --ui-danger-bg: oklch(0.915 0.055 28);
+  --ui-danger-text: oklch(0.330 0.130 26);
+  --ui-danger-border: oklch(0.720 0.092 28);
+  --ui-danger-fill: oklch(0.470 0.170 28);
+  --ui-danger-fill-hover: oklch(0.410 0.165 28);
+  --ui-info-bg: oklch(0.905 0.060 305);
+  --ui-info-text: oklch(0.330 0.145 305);
+  --ui-info-border: oklch(0.660 0.105 305);
+  --ui-disabled-bg: oklch(0.875 0.028 78);
+  --ui-disabled-border: oklch(0.775 0.032 78);
+  --ui-overlay: oklch(0.170 0.014 70 / 0.46);
+  --ui-shadow-raised: 0 1px 2px oklch(0.170 0.014 70 / 0.10), 0 14px 34px oklch(0.170 0.014 70 / 0.10);
+  --ui-shadow-dialog: 0 18px 60px oklch(0.170 0.014 70 / 0.22);
+
+  /* Base aliases. */
   --page-bg: var(--ui-bg);
   --surface: var(--ui-surface);
   --surface-alt: var(--ui-surface-subtle);
@@ -64,7 +91,7 @@
   --accent-subtle: var(--ui-accent-subtle);
   --accent-border: var(--ui-accent-border);
 
-  /* ── shadcn bridge (mirror globals.css against the warm tokens) ── */
+  /* shadcn bridge. */
   --background: var(--ui-bg);
   --foreground: var(--ui-text);
   --card: var(--ui-surface);
@@ -89,28 +116,27 @@
   --sidebar-ring: var(--ui-focus);
 }
 
-/* ── Canonical UI tokens — warm dark (echoes the portal login: ink + gold) ── */
 .dark [data-brand='fluffys'] {
-  --ui-bg: #171412;
-  --ui-surface: #211f1c;
-  --ui-surface-subtle: #1d1a17;
-  --ui-surface-raised: #2a2622;
-  --ui-surface-hover: #302923;
-  --ui-surface-active: #3a322b;
-  --ui-surface-selected: #3a2a20;
-  --ui-border: #3a322b;
-  --ui-border-subtle: #2a2520;
-  --ui-border-strong: #534739;
-  --ui-text: #fff8ed;
-  --ui-text-secondary: rgb(255 248 237 / 0.80);
-  --ui-text-muted: rgb(255 248 237 / 0.56);
-  --ui-text-disabled: rgb(255 248 237 / 0.36);
-  --ui-text-inverse: #171412;
-  --ui-accent: #f0b844;
-  --ui-accent-hover: #f4d06f;
-  --ui-accent-active: #d99f2f;
-  --ui-accent-subtle: rgb(240 184 68 / 0.16);
-  --ui-accent-border: rgb(240 184 68 / 0.38);
-  --ui-focus: #f4d06f;
-  --ui-overlay: rgb(10 8 6 / 0.62);
+  --ui-bg: oklch(0.170 0.014 70);
+  --ui-surface: oklch(0.218 0.016 70);
+  --ui-surface-subtle: oklch(0.190 0.016 70);
+  --ui-surface-raised: oklch(0.250 0.018 70);
+  --ui-surface-hover: oklch(0.290 0.022 70);
+  --ui-surface-active: oklch(0.340 0.026 70);
+  --ui-surface-selected: oklch(0.300 0.065 68);
+  --ui-border: oklch(0.360 0.030 70);
+  --ui-border-subtle: oklch(0.290 0.024 70);
+  --ui-border-strong: oklch(0.460 0.040 70);
+  --ui-text: oklch(0.975 0.020 84);
+  --ui-text-secondary: oklch(0.840 0.026 84);
+  --ui-text-muted: oklch(0.710 0.026 84);
+  --ui-text-disabled: oklch(0.560 0.022 84);
+  --ui-text-inverse: oklch(0.170 0.014 70);
+  --ui-accent: oklch(0.745 0.177 63);
+  --ui-accent-hover: oklch(0.790 0.160 70);
+  --ui-accent-active: oklch(0.690 0.170 58);
+  --ui-accent-subtle: oklch(0.300 0.065 68);
+  --ui-accent-border: oklch(0.630 0.120 70);
+  --ui-focus: oklch(0.795 0.170 72);
+  --ui-overlay: oklch(0.090 0.010 70 / 0.64);
 }

@@ -61,13 +61,13 @@ export default async function KassaPage() {
     );
   }
 
-  if (!canReadOrders || !canWriteOrders) {
+  if (!canReadOrders || !canWriteOrders || !canMarkPaid) {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-[var(--ui-bg)] p-6">
         <Panel className="max-w-md space-y-4">
           <div className="space-y-1">
             <h1 className="text-lg font-semibold text-[var(--ui-text)]">Kassan är inte tillgänglig</h1>
-            <p className="text-sm text-[var(--ui-text-muted)]">Din roll saknar behörighet att läsa eller skapa restaurangordrar.</p>
+            <p className="text-sm text-[var(--ui-text-muted)]">Din roll saknar kassabehörighet för att ta betalt och skapa order vid disken.</p>
           </div>
           <Button asChild variant="secondary">
             <Link href="/">Till översikten</Link>
@@ -98,6 +98,8 @@ export default async function KassaPage() {
       initialActiveOrders={activeOrders}
       initialSummary={summary}
       initialShift={currentShift}
+      employeeName={[user.firstName, user.lastName].filter(Boolean).join(' ') || user.email}
+      employeeEmail={user.email}
       canMarkPaid={canMarkPaid}
       canAdmin={canAdmin}
       canReadReports={canReadReports}
