@@ -66,6 +66,8 @@ describe('proxy public path allowlist', () => {
     expect(shouldRewriteFluffysConstruction('/api/v1/public-site/orders', 'fluffys.se')).toBe(true);
     expect(shouldRewriteFluffysConstruction('/logga-in', 'portal.fluffys.se')).toBe(true);
     expect(shouldRewriteFluffysConstruction('/kassa', 'portal.fluffys.se')).toBe(true);
+    expect(shouldRewriteFluffysConstruction('/api/health', 'fluffys.se')).toBe(false);
+    expect(shouldRewriteFluffysConstruction('/api/health', 'portal.fluffys.se')).toBe(false);
     expect(shouldRewriteFluffysConstruction('/fluffys-under-construction', 'portal.fluffys.se')).toBe(false);
     expect(shouldRewriteFluffysConstruction('/favicon.ico', 'portal.fluffys.se')).toBe(false);
     expect(shouldRewriteFluffysConstruction('/meny', 'offert.soleria.se')).toBe(false);

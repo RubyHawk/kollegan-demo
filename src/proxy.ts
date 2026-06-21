@@ -101,9 +101,14 @@ export function isFluffysConstructionPath(pathname: string): boolean {
   return pathname === FLUFFYS_CONSTRUCTION_PATH || pathname.startsWith(`${FLUFFYS_CONSTRUCTION_PATH}/`);
 }
 
+function isHealthCheckPath(pathname: string): boolean {
+  return pathname === '/api/health';
+}
+
 export function shouldRewriteFluffysConstruction(pathname: string, hostname: string): boolean {
   return isFluffysHost(hostname)
     && !isFluffysConstructionPath(pathname)
+    && !isHealthCheckPath(pathname)
     && pathname !== '/favicon.ico'
     && !pathname.startsWith('/_next/');
 }
