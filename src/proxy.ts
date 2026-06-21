@@ -5,10 +5,13 @@ const SECRET_KEY = new TextEncoder().encode(
   process.env.JWT_SECRET ?? 'dev-secret-change-me'
 );
 
+const FLUFFYS_CONSTRUCTION_PATH = '/fluffys-under-construction';
+
 /** Paths that don't require authentication */
 const PUBLIC_PREFIXES = [
   '/logga-in',
   '/registrera',
+  FLUFFYS_CONSTRUCTION_PATH,
   '/site',
   '/api/health',
   '/api/auth/',
@@ -66,6 +69,7 @@ function resolveAppSurface(value = process.env.APP_SURFACE): AppSurface {
 const APP_SURFACE = resolveAppSurface();
 
 const PUBLIC_SURFACE_PREFIXES = [
+  FLUFFYS_CONSTRUCTION_PATH,
   '/site',
   '/api/v1/public-site',
   '/api/health',
@@ -93,6 +97,17 @@ export function shouldRewriteFluffysFavicon(pathname: string, hostname: string):
   return pathname === '/favicon.ico' && isFluffysHost(hostname);
 }
 
+export function isFluffysConstructionPath(pathname: string): boolean {
+  return pathname === FLUFFYS_CONSTRUCTION_PATH || pathname.startsWith(`${FLUFFYS_CONSTRUCTION_PATH}/`);
+}
+
+export function shouldRewriteFluffysConstruction(pathname: string, hostname: string): boolean {
+  return isFluffysHost(hostname)
+    && !isFluffysConstructionPath(pathname)
+    && pathname !== '/favicon.ico'
+    && !pathname.startsWith('/_next/');
+}
+
 export function isPortalSurfaceBlockedPath(pathname: string, hostname: string): boolean {
   return isPublicSiteHost(hostname)
     || pathname === '/site'
@@ -117,6 +132,23 @@ function maybeRewriteFluffysFavicon(request: NextRequest, hostname: string): Nex
   return NextResponse.rewrite(new URL('/fluffys/favicon.svg', request.url));
 }
 
+function maybeRewriteFluffysConstruction(request: NextRequest, hostname: string): NextResponse | null {
+  const { pathname } = request.nextUrl;
+
+  if (isFluffysHost(hostname) && isFluffysConstructionPath(pathname)) {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-fluffys-construction-host', hostname);
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  if (!shouldRewriteFluffysConstruction(pathname, hostname)) return null;
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-fluffys-construction-host', hostname);
+  return NextResponse.rewrite(new URL(FLUFFYS_CONSTRUCTION_PATH, request.url), {
+    request: { headers: requestHeaders },
+  });
+}
+
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const host = request.headers.get('host') ?? '';
   const hostname = host.split(':')[0]?.toLowerCase() ?? '';
@@ -124,6 +156,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   const fluffysFaviconRewrite = maybeRewriteFluffysFavicon(request, hostname);
   if (fluffysFaviconRewrite) return fluffysFaviconRewrite;
+
+  const fluffysConstructionRewrite = maybeRewriteFluffysConstruction(request, hostname);
+  if (fluffysConstructionRewrite) return fluffysConstructionRewrite;
 
   if (APP_SURFACE === 'portal' && isPortalSurfaceBlockedPath(pathname, hostname)) {
     return new NextResponse(null, { status: 404 });
