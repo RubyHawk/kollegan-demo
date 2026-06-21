@@ -12,7 +12,7 @@ It summarizes what the repository can currently prove about the ERP refactor and
 
 | Area | Status | Repo-backed completion | Evidence |
 | --- | --- | ---: | --- |
-| Engineering / refactor structure | Open | 0% | All 18 implementation-order items are structurally covered in the repo; inventory shows 1 legacy wrappers, 0 files above 1000 lines, 14 files above 500 lines, and 16 dead-candidate rows. |
+| Engineering / refactor structure | Open | 0% | All 18 implementation-order items are structurally covered in the repo; inventory shows 1 legacy wrappers, 0 files above 1000 lines, 15 files above 500 lines, and 16 dead-candidate rows. |
 | Governance / evidence structure | Complete | 100% | 93 Annex A controls are tracked, 93 have baseline evidence linked, 0 are missing applicability, 0 have structural open gaps, 0 are missing implementation status, and ISMS scope has no pending-decision language. |
 | Total repo-backed plan structure | Open | 0% | Some repo-side structural plan requirements are still missing or inconsistent. |
 
@@ -28,7 +28,7 @@ It summarizes what the repository can currently prove about the ERP refactor and
 | Feature API clients | 32 |
 | Legacy API compatibility wrappers | 1 |
 | Files above 1000 lines | 0 |
-| Files above 500 lines | 14 |
+| Files above 500 lines | 15 |
 | Dead-candidate review rows | 16 |
 | Literal legacy `/api/*` references outside route files | 43 |
 | Annex A controls tracked | 93 |
@@ -43,7 +43,7 @@ It summarizes what the repository can currently prove about the ERP refactor and
 | Read-first baseline docs | Complete | All listed read-first docs are present in `docs/`. |
 | Render and API contract baseline | Complete | Key contract and client verification files exist: `api-client.test.ts`, `feature-flags-api-contract.test.ts`, `public-offer-api-contract.test.ts`, and `theme-bootstrap.test.ts`. |
 | API v1 migration and wrappers | Open | Inventory shows 131 `/api/v1` route files, 32 feature API clients, and 1 legacy compatibility wrappers. |
-| Cleanup and file-size enforcement | Open | Inventory shows 0 files above 1000 lines, 14 files above 500 lines, and 16 dead-candidate review rows. |
+| Cleanup and file-size enforcement | Open | Inventory shows 0 files above 1000 lines, 15 files above 500 lines, and 16 dead-candidate review rows. |
 | ISO readiness structure | Complete structurally | 93 Annex A controls are tracked, 0 are missing applicability, 0 have open-gap implementation status, and 0 are missing implementation status. |
 | Operational evidence execution | Operational work remaining | 10 operational registers are tracked, 10 are still empty, and the audit evidence index still has 10 open-gap rows. |
 | ISMS scope decisions | Complete structurally | ISMS scope status is "Structured baseline" and the current out-of-scope list has 3 explicit items. |

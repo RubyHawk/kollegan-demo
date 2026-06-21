@@ -1,22 +1,24 @@
-/* Branded restaurant footer — clean & minimal. A premium dark band with lots of breathing room,
-   strong type and a single orange road accent at the top. Scoped to .fluffy-public, --fp-* tokens. */
+/* Branded restaurant footer — premium, card-based "roadside" footer. The dark band carries a brand
+   row + live actions, then cards for Hitta hit (with a stylized E20 map), Kontakt, Öppettider idag
+   and Snabblänkar, a dashed road divider and a quiet bar. Scoped to .fluffy-public, --fp-* tokens. */
 
 .fluffy-footer {
   position: relative;
   margin-top: 8px;
   border-top: 3px solid var(--fp-orange);
   color: var(--fp-white);
-  /* flat ink with a barely-there warm glow under the orange accent */
-  background:
-    radial-gradient(120% 80% at 50% -10%, rgba(242, 140, 0, 0.07), transparent 58%),
-    var(--fp-ink);
+  background: linear-gradient(180deg, #15120e, var(--fp-ink));
+}
+
+.fluffy-footer__panel {
+  padding-block: 42px 26px;
 }
 
 /* ---- brand + actions ---- */
 .fluffy-footer__top {
   display: grid;
-  gap: 26px;
-  padding-block: 60px 32px;
+  gap: 24px;
+  margin-bottom: 26px;
 }
 
 @media (min-width: 760px) {
@@ -36,8 +38,8 @@
 }
 
 .fluffy-footer__mark {
-  width: 52px;
-  height: 52px;
+  width: 54px;
+  height: 54px;
 }
 
 .fluffy-footer__brand span {
@@ -47,7 +49,7 @@
 
 .fluffy-footer__brand strong {
   font-family: var(--fluffy-display-font);
-  font-size: 1.65rem;
+  font-size: 1.6rem;
   line-height: 1;
 }
 
@@ -76,7 +78,6 @@
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  width: fit-content;
   margin: 0;
   border: 1px solid rgba(255, 250, 240, 0.16);
   border-radius: 999px;
@@ -100,13 +101,8 @@
   color: #8be0ab;
 }
 
-.fluffy-footer__status[data-open="true"] svg {
-  color: #8be0ab;
-}
-
-.fluffy-footer__status[data-open="false"] svg {
-  color: var(--fp-orange);
-}
+.fluffy-footer__status[data-open="true"] svg { color: #8be0ab; }
+.fluffy-footer__status[data-open="false"] svg { color: var(--fp-orange); }
 
 .fluffy-footer__cta-row {
   display: flex;
@@ -149,109 +145,408 @@
   color: var(--fp-white);
 }
 
-/* ---- divider ---- */
-.fluffy-footer__rule {
-  height: 1px;
-  background: rgba(255, 250, 240, 0.12);
-}
-
-/* ---- link columns ---- */
-.fluffy-footer__cols {
+/* ---- cards ---- */
+.fluffy-footer__cards {
   display: grid;
-  gap: 34px 28px;
-  padding-block: 36px 48px;
+  gap: 18px;
 }
 
-@media (min-width: 760px) {
-  .fluffy-footer__cols {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 40px;
+@media (min-width: 900px) {
+  .fluffy-footer__cards {
+    grid-template-columns: 1.6fr 1fr 1fr;
+    align-items: start;
   }
 }
 
-.fluffy-footer__col {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 13px;
+.fluffy-footer__card {
+  border: 1px solid rgba(255, 250, 240, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 250, 240, 0.035);
+  padding: 22px 22px 20px;
 }
 
-.fluffy-footer__col h2 {
-  margin: 0 0 6px;
-  color: rgba(255, 250, 240, 0.92);
+.fluffy-footer__card-title {
+  margin: 0 0 14px;
+  color: rgba(255, 250, 240, 0.9);
   font-family: var(--fluffy-display-font);
-  font-size: 0.8rem;
-  letter-spacing: 0.14em;
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.fluffy-footer__address {
-  margin: 0;
-  color: rgba(255, 250, 240, 0.66);
-  font-size: 0.98rem;
-  font-style: normal;
-  line-height: 1.6;
+.fluffy-footer__stack {
+  display: grid;
+  gap: 18px;
+  align-content: start;
 }
 
-.fluffy-footer__muted {
+/* ---- Hitta hit card (text + map) ---- */
+.fluffy-footer__find {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  min-height: 200px;
+}
+
+.fluffy-footer__find-body {
+  position: relative;
+  z-index: 1;
+  max-width: 60%;
+  padding: 22px 22px 20px;
+}
+
+.fluffy-footer__map {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 48%;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.9;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 40%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 40%);
+  pointer-events: none;
+}
+
+.fluffy-footer__place {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
-  color: rgba(255, 250, 240, 0.46);
-  font-size: 0.94rem;
+  color: var(--fp-white);
+  font-family: var(--fluffy-display-font);
+  font-size: 1.35rem;
+  line-height: 1.05;
+}
+
+.fluffy-footer__place svg {
+  width: 20px;
+  height: 20px;
+  color: var(--fp-orange);
+  stroke-width: 2.4;
+  flex: 0 0 auto;
+}
+
+.fluffy-footer__near {
+  margin: 7px 0 0;
+  color: rgba(255, 250, 240, 0.58);
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.fluffy-footer__blurb {
+  margin: 13px 0 16px;
+  max-width: 32ch;
+  color: rgba(255, 250, 240, 0.62);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.fluffy-footer__find-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.fluffy-footer__route {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  border-radius: 10px;
+  background: var(--fp-orange);
+  color: var(--fp-ink);
+  font-family: var(--fluffy-display-font);
+  font-size: 0.92rem;
+  padding: 0 18px;
+  text-decoration: none;
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+.fluffy-footer__route svg { width: 15px; height: 15px; stroke-width: 2.6; }
+
+.fluffy-footer__route:hover,
+.fluffy-footer__route:focus-visible {
+  background: var(--fp-orange-dark);
+  color: var(--fp-white);
+  transform: translateY(-1px);
+}
+
+/* green E20 route shield */
+.fluffy-footer__shield {
+  display: inline-grid;
+  place-items: center;
+  min-width: 46px;
+  padding: 5px 9px;
+  border: 2px solid rgba(255, 250, 240, 0.85);
+  border-radius: 7px;
+  background: #1f7a46;
+  color: var(--fp-white);
+  font-family: var(--fluffy-display-font);
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+}
+
+/* ---- Kontakt ---- */
+.fluffy-footer__contact {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .fluffy-footer__link {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  color: rgba(255, 250, 240, 0.68);
-  font-size: 0.98rem;
-  font-weight: 700;
+  gap: 10px;
+  color: rgba(255, 250, 240, 0.78);
+  font-size: 0.96rem;
+  font-weight: 750;
   text-decoration: none;
   transition: color 140ms ease;
 }
 
+.fluffy-footer__link + .fluffy-footer__link { margin-top: 11px; }
+
 .fluffy-footer__link svg {
+  width: 17px;
+  height: 17px;
+  color: var(--fp-orange);
+  stroke-width: 2.4;
+  flex: 0 0 auto;
+}
+
+.fluffy-footer__link:hover,
+.fluffy-footer__link:focus-visible { color: var(--fp-white); }
+
+/* ---- Öppettider idag ---- */
+.fluffy-footer__hours-now {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--fp-white);
+  font-family: var(--fluffy-display-font);
+  font-size: 1.4rem;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.fluffy-footer__hours-now svg { width: 18px; height: 18px; color: var(--fp-orange); stroke-width: 2.4; }
+.fluffy-footer__hours-now[data-open="true"] svg { color: #8be0ab; }
+
+.fluffy-footer__hours-line {
+  margin: 8px 0 14px;
+  color: var(--fp-orange);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.fluffy-footer__hours-now[data-open="true"] + .fluffy-footer__hours-line { color: #8be0ab; }
+
+.fluffy-footer__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 250, 240, 0.7);
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.fluffy-footer__more svg { width: 14px; height: 14px; stroke-width: 2.6; }
+.fluffy-footer__more:hover,
+.fluffy-footer__more:focus-visible { color: var(--fp-white); }
+
+/* ---- Snabblänkar ---- */
+.fluffy-footer__links ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fluffy-footer__links a {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 44px;
+  padding: 7px 8px;
+  border-radius: 9px;
+  color: rgba(255, 250, 240, 0.78);
+  font-size: 0.96rem;
+  font-weight: 750;
+  text-decoration: none;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.fluffy-footer__links a:hover,
+.fluffy-footer__links a:focus-visible {
+  background: rgba(255, 250, 240, 0.06);
+  color: var(--fp-white);
+}
+
+.fluffy-footer__links-lead {
+  width: 17px;
+  height: 17px;
+  color: var(--fp-orange);
+  stroke-width: 2.4;
+  flex: 0 0 auto;
+}
+
+.fluffy-footer__links a span { flex: 1; }
+
+.fluffy-footer__links-chev {
   width: 16px;
   height: 16px;
   color: rgba(255, 250, 240, 0.4);
   stroke-width: 2.4;
+  flex: 0 0 auto;
 }
 
-.fluffy-footer__link-out {
-  width: 13px !important;
-  height: 13px !important;
+/* ---- road divider: a strip of asphalt seen from above ---- */
+.fluffy-footer__road {
+  position: relative;
+  height: 18px;
+  margin: 30px 0 24px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #211c16, #14110c);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -2px 5px rgba(0, 0, 0, 0.5);
 }
 
-.fluffy-footer__link:hover,
-.fluffy-footer__link:focus-visible {
-  color: var(--fp-white);
+/* faint solid shoulder lines top + bottom */
+.fluffy-footer__road::before {
+  content: "";
+  position: absolute;
+  inset: 3px 0;
+  border-top: 1.5px solid rgba(255, 250, 240, 0.14);
+  border-bottom: 1.5px solid rgba(255, 250, 240, 0.14);
+  pointer-events: none;
+}
+
+/* dashed centre lane marking — mostly white with the odd orange dash */
+.fluffy-footer__road::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 2.5px;
+  background:
+    repeating-linear-gradient(90deg, var(--fp-orange) 0 24px, transparent 24px 288px),
+    repeating-linear-gradient(90deg, rgba(255, 250, 240, 0.7) 0 24px, transparent 24px 48px);
+  pointer-events: none;
 }
 
 /* ---- bottom bar ---- */
 .fluffy-footer__bar {
-  border-top: 1px solid rgba(255, 250, 240, 0.1);
-}
-
-.fluffy-footer__bar-inner {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 18px;
   align-items: center;
   justify-content: space-between;
-  padding-block: 18px;
   color: rgba(255, 250, 240, 0.46);
   font-size: 0.84rem;
   font-weight: 700;
 }
 
-.fluffy-footer__bar-tag {
-  color: rgba(255, 250, 240, 0.4);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.fluffy-footer__bar-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 250, 240, 0.5);
+}
+
+.fluffy-footer__bar .fluffy-footer__shield {
+  min-width: 40px;
+  padding: 3px 7px;
+  font-size: 0.76rem;
+}
+
+/* ===================================================================================== */
+/* Mobile: rounded panel, full-width actions, contact chips, 2-col quick-link grid        */
+/* ===================================================================================== */
+@media (max-width: 760px) {
+  .fluffy-footer {
+    border-top: 0;
+    background: #0d0b09;
+  }
+
+  .fluffy-footer__panel {
+    border: 1px solid rgba(255, 250, 240, 0.1);
+    border-top: 3px solid var(--fp-orange);
+    border-radius: 22px;
+    background: linear-gradient(180deg, #16130f, var(--fp-ink));
+    padding: 24px 16px 18px;
+  }
+
+  .fluffy-footer__actions { align-items: stretch; }
+  .fluffy-footer__status { justify-content: center; }
+  .fluffy-footer__cta-row { flex-direction: column; }
+  .fluffy-footer__cta { width: 100%; }
+
+  /* Hitta hit: drop the map, shield to the top-right, full-width route */
+  .fluffy-footer__map { display: none; }
+  .fluffy-footer__find-body { max-width: 100%; }
+  .fluffy-footer__find .fluffy-footer__shield {
+    position: absolute;
+    top: 18px;
+    right: 16px;
+  }
+  .fluffy-footer__find .fluffy-footer__route {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Öppettider mini-card is redundant with the status pill on mobile */
+  .fluffy-footer__hours { display: none; }
+
+  /* Kontakt becomes two chips */
+  .fluffy-footer__contact {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+  .fluffy-footer__contact .fluffy-footer__card-title { display: none; }
+  .fluffy-footer__contact .fluffy-footer__link {
+    min-height: 48px;
+    padding: 12px;
+    border: 1px solid rgba(255, 250, 240, 0.1);
+    border-radius: 12px;
+    background: rgba(255, 250, 240, 0.04);
+  }
+  .fluffy-footer__contact .fluffy-footer__link + .fluffy-footer__link { margin-top: 0; }
+
+  /* Snabblänkar becomes a 2-col chip grid */
+  .fluffy-footer__links {
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+  .fluffy-footer__links ul {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .fluffy-footer__links a {
+    min-height: 48px;
+    padding: 12px;
+    border: 1px solid rgba(255, 250, 240, 0.1);
+    border-radius: 12px;
+    background: rgba(255, 250, 240, 0.04);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fluffy-footer__cta {
+  .fluffy-footer__cta,
+  .fluffy-footer__route {
     transition: none;
   }
 }

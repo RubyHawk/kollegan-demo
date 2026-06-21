@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 280" fill="none" aria-hidden="true">
+  <!-- faint street grid (light on the dark card) -->
+  <g stroke="#ffffff" stroke-opacity="0.08" stroke-width="2">
+    <path d="M-10 56 H370" />
+    <path d="M-10 112 H370" />
+    <path d="M-10 168 H370" />
+    <path d="M-10 224 H370" />
+    <path d="M64 -10 V290" />
+    <path d="M148 -10 V290" />
+    <path d="M236 -10 V290" />
+    <path d="M312 -10 V290" />
+  </g>
+  <!-- a few minor cross-streets for texture -->
+  <g stroke="#ffffff" stroke-opacity="0.05" stroke-width="1.4">
+    <path d="M100 -10 L260 290" />
+    <path d="M-10 200 L200 -10" />
+  </g>
+  <!-- the E20 route, highlighted -->
+  <path
+    d="M20 -10 C 90 60, 116 118, 208 156 S 330 232, 380 206"
+    stroke="#f28c00"
+    stroke-opacity="0.95"
+    stroke-width="5"
+    stroke-linecap="round"
+  />
+  <!-- you-are-here marker on the route -->
+  <circle cx="208" cy="156" r="6.5" fill="#f28c00" stroke="#1a1817" stroke-width="3" />
+</svg>
