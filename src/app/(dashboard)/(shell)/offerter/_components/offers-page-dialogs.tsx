@@ -66,9 +66,9 @@ export function OffersPageDialogs({
       <ConfirmDestructiveDialog
         open={Boolean(confirmDeleteOffer)}
         onOpenChange={onDeleteDialogOpenChange}
-        title="Ta bort offert?"
-        description="Offerten tas bort permanent och kan inte återställas."
-        confirmLabel="Ta bort"
+        title="Radera offert?"
+        description="Offerten tas bort från offertlistan. Åtgärden går inte att ångra i appen."
+        confirmLabel="Radera offert"
         onConfirm={onConfirmDelete}
       />
 
