@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { CalendarCheck, ChevronRight, Clock3, CreditCard, LockKeyhole, RotateCcw, Send } from 'lucide-react';
 import { Button } from '@shared/ui/button';
 import { StatusBadge, type StatusTone } from '@shared/ui/status-badge';
+import { cn } from '@shared/lib/utils';
 import type {
   RestaurantBusinessDay,
   RestaurantFulfillmentType,
@@ -47,6 +49,7 @@ export function KassaActiveOrdersStrip({
   businessDay,
   summary,
   activeOrders,
+  isComposingOrder,
   busy,
   canMarkPaid,
   canAdmin,
@@ -59,6 +62,7 @@ export function KassaActiveOrdersStrip({
   businessDay: RestaurantBusinessDay | null;
   summary: RestaurantOrderSummary | null;
   activeOrders: RestaurantOrder[];
+  isComposingOrder: boolean;
   busy: string | null;
   canMarkPaid: boolean;
   canAdmin: boolean;
@@ -68,6 +72,8 @@ export function KassaActiveOrdersStrip({
   onReopenOrder: (order: RestaurantOrder) => void;
   onCloseDay: () => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
+
   if (!businessDay) return null;
 
   const activeCount = summary?.activeOrderCount ?? activeOrders.length;
@@ -79,26 +85,96 @@ export function KassaActiveOrdersStrip({
       ? `${unpaidCount} obetalda`
       : 'Kan stängas';
 
+  const showDetailedOrders = expanded && !isComposingOrder;
+
+  if (!showDetailedOrders) {
+    const visibleOrders = activeOrders.slice(0, 4);
+
+    return (
+      <section
+        id="dagavslut"
+        className="fluffy-active-orders-strip fluffy-active-orders-strip--compact shrink-0 border-t border-[var(--ui-border)] px-3 py-2"
+        aria-label="Aktiva ordrar"
+      >
+        <div className="flex h-full min-w-0 items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <button
+              type="button"
+              className="fluffy-active-orders-count flex h-11 shrink-0 items-center rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] px-3 text-xs font-bold uppercase"
+              aria-expanded={expanded}
+              onClick={() => setExpanded((value) => !value)}
+            >
+              {activeCount === 0 ? 'Inga aktiva' : `${activeCount} aktiva`}
+            </button>
+            {unpaidCount > 0 ? (
+              <span className="fluffy-active-orders-count flex h-11 shrink-0 items-center rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] px-3 text-xs font-bold uppercase">
+                {unpaidCount} obetalda
+              </span>
+            ) : null}
+            <div className="hidden min-w-0 items-center gap-2 sm:flex">
+              {visibleOrders.map((order) => {
+                const canReopen = order.isHeld && (order.kotStatus ?? 'not_sent') === 'not_sent';
+                return (
+                  <button
+                    key={order.id}
+                    type="button"
+                    disabled={!canReopen}
+                    className="fluffy-active-order-chip flex h-11 min-w-0 items-center gap-2 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] px-3 text-sm font-bold tabular-nums disabled:cursor-not-allowed disabled:opacity-65"
+                    onClick={() => onReopenOrder(order)}
+                  >
+                    #{order.orderNumber}
+                    <span className="truncate text-xs font-semibold text-[var(--ui-text-muted)]">
+                      {FULFILLMENT_LABELS[order.fulfillmentType]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2">
+            {dayBlocked ? <LockKeyhole size={16} strokeWidth={1.75} /> : <CalendarCheck size={16} strokeWidth={1.75} />}
+            <div className="hidden text-left sm:block">
+              <p className="text-[11px] font-bold uppercase leading-3">Dagavslut</p>
+              <p className="max-w-28 truncate text-xs text-[var(--ui-text-muted)]">{dayBlocked ? blocker : 'Redo'}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section id="dagavslut" className="fluffy-active-orders-strip shrink-0 border-t border-[var(--ui-border)] px-3 py-2">
+    <section id="dagavslut" className="fluffy-active-orders-strip fluffy-active-orders-strip--expanded shrink-0 border-t border-[var(--ui-border)] px-3 py-2">
       <div className="flex h-full gap-3 overflow-x-auto pb-1">
+        <button
+          type="button"
+          className="fluffy-active-orders-count flex min-w-[112px] items-center justify-center rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] px-3 py-2 text-xs font-bold uppercase"
+          aria-expanded={expanded}
+          onClick={() => setExpanded(false)}
+        >
+          Dölj
+        </button>
         {activeOrders.length === 0 ? (
-          <div className="fluffy-active-order-empty flex min-w-[260px] items-center rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-3 text-sm text-[var(--ui-text-muted)]">
+          <div className="fluffy-active-order-empty flex min-w-[220px] items-center rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-3 text-sm text-[var(--ui-text-muted)]">
             Inga aktiva ordrar
           </div>
         ) : activeOrders.map((order) => {
           const next = orderNextAction(order);
           const nextDisabled = next?.status === 'completed' && order.paymentStatus !== 'paid';
           const canReopen = order.isHeld && (order.kotStatus ?? 'not_sent') === 'not_sent';
-          const itemSummary = order.items.slice(0, 3).map((item) => `${item.quantity} x ${item.name}`).join(' · ');
+          const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
           return (
             <article
               key={order.id}
-              className="fluffy-active-order-ticket grid min-w-[250px] max-w-[280px] grid-rows-[1fr_auto] gap-2 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2"
+              className="fluffy-active-order-ticket grid min-w-[220px] max-w-[250px] grid-rows-[1fr_auto] gap-2 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2"
             >
               <button
                 type="button"
-                className="min-w-0 text-left outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
+                className={cn(
+                  'min-w-0 rounded-[var(--ui-radius-sm)] text-left outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]',
+                  !canReopen && 'cursor-default',
+                )}
                 disabled={!canReopen}
                 onClick={() => onReopenOrder(order)}
               >
@@ -112,10 +188,10 @@ export function KassaActiveOrdersStrip({
                     {timeLabel(order.createdAt)}
                   </span>
                 </div>
-                <p className="mt-2 line-clamp-2 text-xs leading-4 text-[var(--ui-text)]">
-                  {itemSummary || 'Inga rader'}
+                <p className="mt-1 text-xs leading-4 text-[var(--ui-text-muted)]">
+                  {itemCount || 0} artiklar
                 </p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
+                <div className="mt-2 flex flex-wrap gap-1">
                   <StatusBadge tone={STATUS_TONES[order.status]}>{STATUS_LABELS[order.status]}</StatusBadge>
                   <StatusBadge tone={order.paymentStatus === 'paid' ? 'success' : 'warning'}>
                     {order.paymentStatus === 'paid' ? 'Betald' : 'Obetald'}
@@ -124,13 +200,13 @@ export function KassaActiveOrdersStrip({
                 </div>
               </button>
 
-              <div className="fluffy-active-order-actions flex flex-wrap items-end gap-1.5">
+              <div className="fluffy-active-order-actions grid grid-cols-2 gap-1.5">
                 {canReopen ? (
                   <Button
                     type="button"
                     variant="secondary"
                     size="compact"
-                    className="h-8 px-2 text-xs"
+                    className="h-9 px-2 text-xs"
                     onClick={() => onReopenOrder(order)}
                   >
                     <RotateCcw data-icon="inline-start" />
@@ -142,7 +218,7 @@ export function KassaActiveOrdersStrip({
                     type="button"
                     variant="secondary"
                     size="compact"
-                    className="h-8 px-2 text-xs"
+                    className="h-9 px-2 text-xs"
                     loading={busy === `send:${order.id}`}
                     onClick={() => onSendHeld(order)}
                   >
@@ -155,7 +231,7 @@ export function KassaActiveOrdersStrip({
                     type="button"
                     variant="secondary"
                     size="compact"
-                    className="h-8 px-2 text-xs"
+                    className="h-9 px-2 text-xs"
                     loading={busy === `paid:${order.id}`}
                     onClick={() => onMarkPaid(order)}
                   >
@@ -167,7 +243,7 @@ export function KassaActiveOrdersStrip({
                   <Button
                     type="button"
                     size="compact"
-                    className="h-8 px-2 text-xs"
+                    className="h-9 px-2 text-xs"
                     disabled={nextDisabled}
                     loading={busy === `status:${order.id}:${next.status}`}
                     onClick={() => onMoveOrder(order, next.status)}
@@ -180,7 +256,7 @@ export function KassaActiveOrdersStrip({
                     type="button"
                     variant="outline"
                     size="compact"
-                    className="h-8 px-2 text-xs"
+                    className="h-9 px-2 text-xs"
                     loading={busy === `status:${order.id}:cancelled`}
                     onClick={() => onMoveOrder(order, 'cancelled')}
                   >
@@ -192,7 +268,7 @@ export function KassaActiveOrdersStrip({
           );
         })}
 
-        <div className="fluffy-active-order-summary flex min-w-[260px] max-w-[300px] items-center justify-between gap-3 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-3">
+        <div className="fluffy-active-order-summary flex min-w-[220px] max-w-[260px] items-center justify-between gap-3 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-3">
           <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-wide">Dagavslut</p>
             <div className="mt-3 flex items-center gap-3">

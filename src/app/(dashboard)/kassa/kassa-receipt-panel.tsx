@@ -71,8 +71,8 @@ export function KassaReceiptPanel({
 }) {
   return (
     <aside className="fluffy-receipt grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] bg-[var(--ui-surface)]">
-      <header className="border-b border-[var(--ui-border)] p-4">
-        <div className="mb-4 grid grid-cols-4 gap-2">
+      <header className="border-b border-[var(--ui-border)] p-3">
+        <div className="mb-3 grid grid-cols-4 gap-2">
           {FULFILLMENT_OPTIONS.map((option) => {
             const Icon = option.icon;
             return (
@@ -100,7 +100,7 @@ export function KassaReceiptPanel({
             <h2 className="text-xl font-bold">{orderNumber ? `Order #${orderNumber}` : 'Ny order'}</h2>
           </div>
           <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" size="compact" className="h-10 px-3" onClick={onOpenOrderInfo}>
+            <Button type="button" variant="outline" size="compact" className="h-11 px-3" onClick={onOpenOrderInfo}>
               <Info data-icon="inline-start" />
               Info
             </Button>
@@ -108,7 +108,7 @@ export function KassaReceiptPanel({
               type="button"
               variant="ghost"
               size="compact"
-              className="h-10 px-3"
+              className="h-11 px-3"
               disabled={draftItems.length === 0}
               onClick={onClear}
             >
@@ -118,7 +118,7 @@ export function KassaReceiptPanel({
         </div>
       </header>
 
-      <section className="min-h-0 overflow-y-auto p-4">
+      <section className="min-h-0 overflow-y-auto p-3">
         {error ? <InlineAlert tone="danger" className="mb-3">{error}</InlineAlert> : null}
         {success ? <InlineAlert tone="success" className="mb-3">{success}</InlineAlert> : null}
 
@@ -205,7 +205,7 @@ export function KassaReceiptPanel({
                 onClick={() => {
                   if (extra.item) onAddQuickExtra(extra.item);
                 }}
-                className="min-h-10 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 text-left text-xs font-semibold transition-colors hover:bg-[var(--ui-surface-hover)] disabled:cursor-not-allowed disabled:opacity-55"
+                className="min-h-11 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 text-left text-xs font-semibold transition-colors hover:bg-[var(--ui-surface-hover)] disabled:cursor-not-allowed disabled:opacity-55"
               >
                 <span className="block truncate">+ {extra.label}</span>
                 <span className="text-[11px] text-[var(--ui-text-muted)]">
@@ -217,7 +217,7 @@ export function KassaReceiptPanel({
         </section>
       </section>
 
-      <footer className="border-t border-[var(--ui-border)] p-4">
+      <footer className="fluffy-receipt-footer border-t border-[var(--ui-border)] p-3">
         <div className="fluffy-receipt__totals mb-3 flex flex-col gap-1 rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3 text-sm">
           <div className="flex justify-between gap-3">
             <span className="text-[var(--ui-text-muted)]">Delsumma</span>
@@ -248,7 +248,7 @@ export function KassaReceiptPanel({
         <Button
           type="button"
           size="lg"
-          className="fluffy-action-send mb-2 h-12 w-full text-base font-bold"
+          className="fluffy-action-send h-12 w-full text-base font-bold"
           disabled={draftItems.length === 0 || !online}
           loading={busy === 'create-order'}
           onClick={() => onSubmitOrderAction('send')}
@@ -258,7 +258,7 @@ export function KassaReceiptPanel({
         </Button>
         <Button
           type="button"
-          className="fluffy-action-pay mb-2 h-12 w-full text-base font-bold"
+          className="fluffy-action-pay h-12 w-full text-base font-bold"
           disabled={draftItems.length === 0 || !online || !canMarkPaid}
           loading={busy === 'create-order'}
           onClick={() => onSubmitOrderAction('pay')}
@@ -269,7 +269,7 @@ export function KassaReceiptPanel({
         <Button
           type="button"
           variant="outline"
-          className="h-10 w-full"
+          className="h-11 w-full text-sm font-bold"
           disabled={draftItems.length === 0 || !online}
           loading={busy === 'create-order'}
           onClick={() => onSubmitOrderAction('hold')}

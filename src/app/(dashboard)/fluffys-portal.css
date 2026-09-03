@@ -70,6 +70,14 @@
   background: var(--ui-surface);
 }
 
+.fluffy-pos-workspace {
+  overflow: hidden;
+}
+
+.fluffy-pos-context-layer > .fluffy-context-panel {
+  height: 100%;
+}
+
 .fluffy-wordmark {
   color: var(--ui-accent);
   font-size: 2rem;
@@ -181,8 +189,20 @@
   filter: saturate(1.08) contrast(1.02);
 }
 
-.fluffy-product-ticket__media[data-fallback='true'] img {
-  transform: scale(1.55);
+.fluffy-product-ticket__media[data-fallback='true'] {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ui-accent) 16%, transparent), transparent 68%),
+    var(--ui-surface-subtle);
+}
+
+.fluffy-product-ticket__fallback::before {
+  content: "";
+  width: 46px;
+  height: 6px;
+  margin-bottom: auto;
+  border-radius: 999px;
+  background: var(--ui-accent);
+  opacity: 0.9;
 }
 
 .fluffy-product-ticket__price {
@@ -194,6 +214,8 @@
 }
 
 .fluffy-product-add {
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 999px;
   background: var(--ui-accent);
   color: var(--ui-text-inverse);
@@ -223,6 +245,10 @@
   font-family: var(--fluffy-body-font);
   font-weight: 800;
   text-transform: none;
+}
+
+.fluffy-receipt-footer > button + button {
+  margin-top: 8px;
 }
 
 .fluffy-action-send {
@@ -255,6 +281,10 @@
 .fluffy-active-orders-strip {
   min-height: 152px;
   background: var(--fluffy-board);
+}
+
+.fluffy-active-orders-strip--compact {
+  min-height: 64px;
 }
 
 .fluffy-active-orders-strip > div {
@@ -295,6 +325,12 @@
   color: var(--ui-accent);
 }
 
+.fluffy-active-orders-count,
+.fluffy-active-order-chip {
+  background: color-mix(in srgb, var(--ui-text-inverse) 7%, transparent);
+  color: var(--ui-text);
+}
+
 .fluffy-kitchen-column {
   overflow: hidden;
   border-color: var(--ui-border-strong);
@@ -310,7 +346,79 @@
   background: var(--ui-surface);
 }
 
-@media (max-width: 1023px) {
+@media (min-width: 768px) and (max-width: 1279px) {
+  .fluffy-pos-rail {
+    width: 72px;
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .fluffy-pos-rail__brand {
+    justify-content: center;
+    padding: 0;
+    margin-bottom: 12px;
+  }
+
+  .fluffy-wordmark {
+    font-size: 0;
+  }
+
+  .fluffy-wordmark::before {
+    content: "F";
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  .fluffy-pos-rail__item {
+    justify-content: center;
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .fluffy-pos-rail__item span,
+  .fluffy-pos-rail .mt-4 .min-w-0 {
+    display: none;
+  }
+
+  .fluffy-pos-rail .mt-4 > div {
+    justify-content: center;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1535px) {
+  .fluffy-pos-context-layer {
+    position: absolute;
+    top: 0;
+    right: 360px;
+    bottom: 0;
+    left: 0;
+    z-index: 10;
+    border-right: 1px solid var(--ui-border);
+    background: var(--ui-surface);
+    box-shadow: 8px 0 18px color-mix(in srgb, var(--ui-text) 12%, transparent);
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .fluffy-pos-context-layer {
+    right: 380px;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1535px) {
+  .fluffy-pos-context-layer {
+    right: 410px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .fluffy-pos-context-layer {
+    position: static;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 767px) {
   html:has(.fluffy-pos-shell),
   body:has(.fluffy-pos-shell) {
     height: auto !important;
