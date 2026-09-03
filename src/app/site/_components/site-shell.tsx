@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { MenuIcon } from 'lucide-react';
-import type { PublicRestaurantSite } from '@modules/supporting/restaurant-menu';
+import { getPublicSiteCapabilities, type PublicRestaurantSite } from '@modules/supporting/restaurant-menu';
 import { publicSiteHref } from '../_lib/public-site-data';
 import { FluffysFooter } from './site-footer';
 import { ScribbleStroke } from './scribble-stroke';
@@ -19,6 +19,22 @@ function publicBrandName(siteName: string) {
   return siteName.toLocaleLowerCase('sv-SE').includes('laxå') ? siteName : `${siteName} Laxå`;
 }
 
+function DisabledHeaderAction({
+  children,
+  className,
+  title,
+}: {
+  children: ReactNode;
+  className: string;
+  title: string;
+}) {
+  return (
+    <span className={className} aria-disabled="true" title={title}>
+      {children}
+    </span>
+  );
+}
+
 export function SiteShell({
   site,
   children,
@@ -33,6 +49,7 @@ export function SiteShell({
   mainClassName?: string;
 }) {
   const brandName = publicBrandName(site.settings.siteName);
+  const capabilities = getPublicSiteCapabilities();
 
   return (
     <main className={mainClassName ? `fluffy-public ${mainClassName}` : 'fluffy-public'}>
@@ -55,13 +72,31 @@ export function SiteShell({
             ))}
           </nav>
           <div className="fluffy-header__actions">
-            <HeaderCartButton href={publicSiteHref(routePrefix, '/bestall')} />
-            <Link href={publicSiteHref(routePrefix, '/boka')} className="fluffy-header__cta fluffy-header__cta--book">
-              Boka bord
-            </Link>
-            <Link href={publicSiteHref(routePrefix, '/bestall')} className="fluffy-header__cta fluffy-header__cta--order">
-              Beställ
-            </Link>
+            {capabilities.orderingEnabled ? <HeaderCartButton href={publicSiteHref(routePrefix, '/bestall')} /> : null}
+            {capabilities.bookingEnabled ? (
+              <Link href={publicSiteHref(routePrefix, '/boka')} className="fluffy-header__cta fluffy-header__cta--book">
+                Boka bord
+              </Link>
+            ) : (
+              <DisabledHeaderAction
+                className="fluffy-header__cta fluffy-header__cta--book"
+                title="Bokningen öppnar snart"
+              >
+                Boka snart
+              </DisabledHeaderAction>
+            )}
+            {capabilities.orderingEnabled ? (
+              <Link href={publicSiteHref(routePrefix, '/bestall')} className="fluffy-header__cta fluffy-header__cta--order">
+                Beställ
+              </Link>
+            ) : (
+              <DisabledHeaderAction
+                className="fluffy-header__cta fluffy-header__cta--order"
+                title="Onlinebeställning öppnar snart"
+              >
+                Beställ snart
+              </DisabledHeaderAction>
+            )}
             <details className="fluffy-header__menu">
               <summary aria-label="Öppna meny">
                 <MenuIcon size={30} strokeWidth={2.25} />
@@ -72,8 +107,16 @@ export function SiteShell({
                     {item.label}
                   </Link>
                 ))}
-                <Link href={publicSiteHref(routePrefix, '/bestall')}>Beställ</Link>
-                <Link href={publicSiteHref(routePrefix, '/boka')}>Boka bord</Link>
+                {capabilities.orderingEnabled ? (
+                  <Link href={publicSiteHref(routePrefix, '/bestall')}>Beställ</Link>
+                ) : (
+                  <span aria-disabled="true">Beställ snart</span>
+                )}
+                {capabilities.bookingEnabled ? (
+                  <Link href={publicSiteHref(routePrefix, '/boka')}>Boka bord</Link>
+                ) : (
+                  <span aria-disabled="true">Boka snart</span>
+                )}
               </nav>
             </details>
           </div>
@@ -88,7 +131,7 @@ export function SiteShell({
 
       {children}
 
-      <FluffysFooter site={site} routePrefix={routePrefix} />
+      <FluffysFooter site={site} routePrefix={routePrefix} capabilities={capabilities} />
     </main>
   );
 }

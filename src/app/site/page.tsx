@@ -10,7 +10,7 @@ import {
   PhoneIcon,
   TimerResetIcon,
 } from 'lucide-react';
-import type { RestaurantMenuItemView } from '@modules/supporting/restaurant-menu';
+import { getPublicSiteCapabilities, type RestaurantMenuItemView } from '@modules/supporting/restaurant-menu';
 import { MenuBoard } from './_components/menu-list';
 import { OpeningRoute } from './_components/opening-route';
 import { ScribbleStroke } from './_components/scribble-stroke';
@@ -121,6 +121,7 @@ function todayHoursLabel(site: Awaited<ReturnType<typeof getSiteData>>['site']) 
 export default async function PublicHomePage() {
   const { site, isFallback } = await getSiteData();
   const routePrefix = await getPublicSiteRoutePrefix();
+  const { orderingEnabled } = getPublicSiteCapabilities();
   const hoursLabel = todayHoursLabel(site);
   const address = addressLine(site) || 'Värgårdsvägen 6, 695 31 Laxå';
 
@@ -276,7 +277,7 @@ export default async function PublicHomePage() {
           </h2>
           <p className="fluffy-menu__lede">Något för alla smaker — bygg din favorit eller välj en klassiker.</p>
         </div>
-        <MenuBoard categories={site.categories} enableOrdering={!isFallback} />
+        <MenuBoard categories={site.categories} enableOrdering={orderingEnabled && !isFallback} />
       </section>
 
       <section className="fluffy-section fluffy-section--white" id="oppettider">

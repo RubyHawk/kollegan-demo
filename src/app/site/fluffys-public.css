@@ -183,6 +183,18 @@ body:has(.fluffy-public) {
   transform: translateY(-1px);
 }
 
+.fluffy-header__cta[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.fluffy-header__cta[aria-disabled="true"]:hover,
+.fluffy-header__cta[aria-disabled="true"]:focus-visible {
+  background: transparent;
+  color: var(--fp-orange);
+  transform: none;
+}
+
 /* "Beställ" is the filled primary action; "Boka bord" stays the ghost outline beside it. */
 .fluffy-header__cta--order {
   background: var(--fp-orange);
@@ -194,6 +206,13 @@ body:has(.fluffy-public) {
   background: var(--fp-orange-dark);
   border-color: var(--fp-orange-dark);
   color: var(--fp-white);
+}
+
+.fluffy-header__cta--order[aria-disabled="true"]:hover,
+.fluffy-header__cta--order[aria-disabled="true"]:focus-visible {
+  background: var(--fp-orange);
+  border-color: var(--fp-orange);
+  color: var(--fp-ink);
 }
 
 .fluffy-fallback {

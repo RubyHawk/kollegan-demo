@@ -24,6 +24,12 @@ export type {
 } from './domain/restaurant-menu.entity';
 export { deriveMenuVariantsFromPriceTags } from './domain/restaurant-menu.entity';
 export {
+  getPublicSiteCapabilities,
+  isPublicBookingEnabled,
+  isPublicOrderingEnabled,
+  type PublicSiteCapabilities,
+} from './application/public-site-capabilities';
+export {
   createPublicReservationRequest,
   createRestaurantEvent,
   createRestaurantMenuCategory,

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { CheckCircle2Icon } from 'lucide-react';
+import { getPublicSiteCapabilities } from '@modules/supporting/restaurant-menu';
 import { SiteShell } from '../../_components/site-shell';
 import { getPublicSiteRoutePrefix, getSiteData, publicSiteHref, siteMetadata } from '../../_lib/public-site-data';
 
@@ -15,6 +16,7 @@ export default async function OrderConfirmedPage({ searchParams }: { searchParam
   const { site, isFallback } = await getSiteData();
   const routePrefix = await getPublicSiteRoutePrefix();
   const { order } = await searchParams;
+  const { orderingEnabled } = getPublicSiteCapabilities();
 
   return (
     <SiteShell site={site} isFallback={isFallback} routePrefix={routePrefix}>
@@ -28,7 +30,9 @@ export default async function OrderConfirmedPage({ searchParams }: { searchParam
               Vi har tagit emot din beställning och börjar förbereda den.
               {site.settings.phone ? ` Frågor? Ring oss på ${site.settings.phone}.` : ''}
             </p>
-            <Link href={publicSiteHref(routePrefix, '/meny')} className="fluffy-button fluffy-button--primary">Beställ mer</Link>
+            <Link href={publicSiteHref(routePrefix, '/meny')} className="fluffy-button fluffy-button--primary">
+              {orderingEnabled ? 'Beställ mer' : 'Se menyn'}
+            </Link>
           </div>
         </div>
       </section>
