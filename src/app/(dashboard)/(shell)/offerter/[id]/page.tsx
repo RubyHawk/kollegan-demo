@@ -11,6 +11,7 @@ import { StatusBadge } from '@shared/ui/status-badge';
 import { getSessionUser } from '@modules/supporting/auth';
 import { acceptOfferOnBehalfForStaff, getStaffOfferDetail } from '@modules/supporting/offers';
 import { CreateInvoiceButton } from './_components/create-invoice-button';
+import { DeleteOfferButton } from './_components/delete-offer-button';
 import { STATUS_LABEL, STATUS_TONE } from '../_lib/offers-dashboard-constants';
 
 function fmtDate(iso?: string) {
@@ -93,6 +94,7 @@ export default async function OfferDetailsPage({
           </div>
 
           <div className="flex flex-wrap gap-2">
+            <DeleteOfferButton offerId={offer.id} offerTitle={offer.title} />
             {(offer.status === 'sent' || offer.status === 'viewed') && (
               <form action={acceptOnBehalfAction}>
                 <Button type="submit" variant="secondary">
