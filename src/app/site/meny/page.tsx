@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { MapPinIcon, PhoneIcon } from 'lucide-react';
+import { getPublicSiteCapabilities } from '@modules/supporting/restaurant-menu';
 import { MenuBoard } from '../_components/menu-list';
 import { SiteShell } from '../_components/site-shell';
 import { getPublicSiteRoutePrefix, getSiteData, publicSiteHref, siteMetadata } from '../_lib/public-site-data';
@@ -19,6 +20,7 @@ export default async function PublicMenuPage() {
   const { site, isFallback } = await getSiteData();
   const routePrefix = await getPublicSiteRoutePrefix();
   const callHref = phoneHref(site.settings.phone);
+  const { orderingEnabled } = getPublicSiteCapabilities();
 
   return (
     <SiteShell site={site} isFallback={isFallback} routePrefix={routePrefix}>
@@ -34,7 +36,7 @@ export default async function PublicMenuPage() {
       </section>
 
       <div className="fluffy-menu fluffy-menu--page" id="meny">
-        <MenuBoard categories={site.categories} enableOrdering={!isFallback} />
+        <MenuBoard categories={site.categories} enableOrdering={orderingEnabled && !isFallback} />
       </div>
 
       <div className="fluffy-mobile-actions" aria-label="Snabbval">

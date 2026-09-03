@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getPublicSiteCapabilities } from '@modules/supporting/restaurant-menu';
 import { AvailabilityStatus } from '../_components/availability-status';
 import { WeeklyHours } from '../_components/opening-hours';
 import { SiteShell } from '../_components/site-shell';
@@ -14,6 +15,7 @@ export default async function PublicContactPage() {
   const { site, isFallback } = await getSiteData();
   const routePrefix = await getPublicSiteRoutePrefix();
   const address = addressLine(site);
+  const { bookingEnabled } = getPublicSiteCapabilities();
 
   return (
     <SiteShell site={site} isFallback={isFallback} routePrefix={routePrefix}>
@@ -24,9 +26,15 @@ export default async function PublicContactPage() {
             <h1 className="fluffy-page-title">Öppettider, takeaway och bord.</h1>
             <p>Hör av dig om du vill boka, fråga om menyn eller bara dubbelkolla när köket är öppet.</p>
             <div className="fluffy-actions">
-              <Link href={publicSiteHref(routePrefix, '/boka')} className="fluffy-button fluffy-button--dark">
-                Boka bord
-              </Link>
+              {bookingEnabled ? (
+                <Link href={publicSiteHref(routePrefix, '/boka')} className="fluffy-button fluffy-button--dark">
+                  Boka bord
+                </Link>
+              ) : (
+                <span className="fluffy-button fluffy-button--dark" aria-disabled="true">
+                  Boka snart
+                </span>
+              )}
               <Link href={publicSiteHref(routePrefix, '/meny')} className="fluffy-button">
                 Se menyn
               </Link>

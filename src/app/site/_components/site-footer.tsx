@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowUpRightIcon, ClockIcon, MailIcon, MapPinIcon, PhoneIcon } from 'lucide-react';
-import type { PublicRestaurantSite } from '@modules/supporting/restaurant-menu';
+import type { PublicRestaurantSite, PublicSiteCapabilities } from '@modules/supporting/restaurant-menu';
 import { addressLine, DAY_LABELS, publicSiteHref } from '../_lib/public-site-data';
 import { getOpeningStatus, relativeDayWord, stockholmNow } from '../_lib/opening-status';
 
@@ -25,7 +25,15 @@ function footerOpenLabel(site: PublicRestaurantSite): { open: boolean | null; te
   return { open: false, text: 'Stängt' };
 }
 
-export function FluffysFooter({ site, routePrefix = '' }: { site: PublicRestaurantSite; routePrefix?: string }) {
+export function FluffysFooter({
+  site,
+  routePrefix = '',
+  capabilities = { bookingEnabled: false, orderingEnabled: false },
+}: {
+  site: PublicRestaurantSite;
+  routePrefix?: string;
+  capabilities?: PublicSiteCapabilities;
+}) {
   const { settings } = site;
   const address = addressLine(site);
   const tel = telHref(settings.phone);
@@ -81,20 +89,40 @@ export function FluffysFooter({ site, routePrefix = '' }: { site: PublicRestaura
               {settings.email}
             </a>
           ) : null}
-          <Link href={publicSiteHref(routePrefix, '/bestall')} className="fluffy-footer__cta fluffy-footer__cta--order">
-            Beställ
-          </Link>
-          <Link href={publicSiteHref(routePrefix, '/boka')} className="fluffy-footer__cta">
-            Boka bord
-          </Link>
+          {capabilities.orderingEnabled ? (
+            <Link href={publicSiteHref(routePrefix, '/bestall')} className="fluffy-footer__cta fluffy-footer__cta--order">
+              Beställ
+            </Link>
+          ) : (
+            <span className="fluffy-footer__cta fluffy-footer__cta--order" aria-disabled="true">
+              Beställ snart
+            </span>
+          )}
+          {capabilities.bookingEnabled ? (
+            <Link href={publicSiteHref(routePrefix, '/boka')} className="fluffy-footer__cta">
+              Boka bord
+            </Link>
+          ) : (
+            <span className="fluffy-footer__cta" aria-disabled="true">
+              Boka snart
+            </span>
+          )}
         </div>
 
         <nav className="fluffy-footer__col" aria-label="Snabblänkar">
           <h2>Snabblänkar</h2>
           <Link className="fluffy-footer__link" href={publicSiteHref(routePrefix, '/#meny')}>Meny</Link>
           <Link className="fluffy-footer__link" href={publicSiteHref(routePrefix, '/#oppettider')}>Öppettider</Link>
-          <Link className="fluffy-footer__link" href={publicSiteHref(routePrefix, '/bestall')}>Beställ</Link>
-          <Link className="fluffy-footer__link" href={publicSiteHref(routePrefix, '/boka')}>Boka bord</Link>
+          {capabilities.orderingEnabled ? (
+            <Link className="fluffy-footer__link" href={publicSiteHref(routePrefix, '/bestall')}>Beställ</Link>
+          ) : (
+            <span className="fluffy-footer__link" aria-disabled="true">Beställ snart</span>
+          )}
+          {capabilities.bookingEnabled ? (
+            <Link className="fluffy-footer__link" href={publicSiteHref(routePrefix, '/boka')}>Boka bord</Link>
+          ) : (
+            <span className="fluffy-footer__link" aria-disabled="true">Boka snart</span>
+          )}
           <Link className="fluffy-footer__link" href={publicSiteHref(routePrefix, '/kontakt')}>Kontakt</Link>
         </nav>
       </div>

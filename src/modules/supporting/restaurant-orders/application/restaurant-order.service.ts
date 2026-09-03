@@ -19,7 +19,7 @@ import {
   type StartBusinessDayInput,
   type UpdateRestaurantOrderInput,
 } from '../domain/restaurant-order.entity';
-import { resolvePublicRestaurantOrganization } from '@modules/supporting/restaurant-menu';
+import { isPublicOrderingEnabled, resolvePublicRestaurantOrganization } from '@modules/supporting/restaurant-menu';
 import { restaurantOrderRepository } from '../infrastructure/restaurant-order.repository';
 import { createOnlinePayment, type OnlinePaymentResult } from './payment/payment.service';
 import { isProviderEnabled } from './payment/payment-config';
@@ -247,6 +247,7 @@ export async function createPublicRestaurantOrder(
   // turned off does not accept external orders.
   const publicSiteEnabled = await tenantHasModule(organizationId, 'restaurant_public_site');
   if (!publicSiteEnabled) throw Errors.notFound('Restaurant site not found');
+  if (!isPublicOrderingEnabled()) throw Errors.forbidden('Onlinebeställningar är stängda just nu.');
   await requireOrdersModule(organizationId);
 
   const customerName = cleanText(input.customerName);

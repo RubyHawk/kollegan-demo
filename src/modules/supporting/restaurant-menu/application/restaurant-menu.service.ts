@@ -2,6 +2,7 @@ import { Errors } from '@platform/api/errors';
 import { logger } from '@platform/logging/logger';
 import { normalizeTenantHost, resolveTenantByHost, tenantHasModule } from '@platform/tenancy/tenant-resolver';
 import { restaurantMenuRepository } from '../infrastructure/restaurant-menu.repository';
+import { isPublicBookingEnabled } from './public-site-capabilities';
 import { sendReservationEmail, type ReservationEmailKind } from './reservation-email';
 import type {
   CreateMenuCategoryInput,
@@ -65,6 +66,7 @@ export async function createPublicReservationRequest(
   const organizationId = await resolvePublicRestaurantOrganization(host);
   const enabled = await tenantHasModule(organizationId, 'restaurant_public_site');
   if (!enabled) throw Errors.notFound('Restaurant site not found');
+  if (!isPublicBookingEnabled()) throw Errors.forbidden('Bokningsförfrågningar är stängda just nu.');
   const reservation = await restaurantMenuRepository.createReservationRequest(organizationId, input);
   await notifyReservationGuest(organizationId, input, 'received');
   return reservation;
