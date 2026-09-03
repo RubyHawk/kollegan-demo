@@ -9,6 +9,7 @@ vi.mock('@platform/logging/logger', () => ({
 }));
 
 vi.mock('@modules/supporting/restaurant-menu', () => ({
+  isPublicOrderingEnabled: vi.fn(),
   resolvePublicRestaurantOrganization: vi.fn(),
 }));
 
@@ -31,7 +32,7 @@ vi.mock('../../src/modules/supporting/restaurant-orders/infrastructure/restauran
 }));
 
 import { tenantHasModule } from '@platform/tenancy/tenant-resolver';
-import { resolvePublicRestaurantOrganization } from '@modules/supporting/restaurant-menu';
+import { isPublicOrderingEnabled, resolvePublicRestaurantOrganization } from '@modules/supporting/restaurant-menu';
 import {
   closeBusinessDay,
   createPublicRestaurantOrder,
@@ -92,6 +93,7 @@ describe('restaurant order service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(tenantHasModule).mockResolvedValue(true);
+    vi.mocked(isPublicOrderingEnabled).mockReturnValue(true);
     vi.mocked(resolvePublicRestaurantOrganization).mockResolvedValue('org_1');
     vi.mocked(restaurantOrderRepository.getOpenBusinessDay).mockResolvedValue(day);
     vi.mocked(restaurantOrderRepository.findMenuItemsByIds).mockResolvedValue([
@@ -368,6 +370,7 @@ describe('public restaurant order service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(tenantHasModule).mockResolvedValue(true);
+    vi.mocked(isPublicOrderingEnabled).mockReturnValue(true);
     vi.mocked(resolvePublicRestaurantOrganization).mockResolvedValue('org_1');
     vi.mocked(restaurantOrderRepository.getOpenBusinessDay).mockResolvedValue(day);
     vi.mocked(restaurantOrderRepository.findMenuItemsByIds).mockResolvedValue([
@@ -384,6 +387,19 @@ describe('public restaurant order service', () => {
       customerPhone: '+46700000000',
       items: [{ menuItemId: 'menu_1', quantity: 1 }],
     })).rejects.toMatchObject({ problem: { status: 404 } });
+    expect(restaurantOrderRepository.createOrder).not.toHaveBeenCalled();
+  });
+
+  it('rejects public orders while ordering is disabled (403)', async () => {
+    vi.mocked(isPublicOrderingEnabled).mockReturnValue(false);
+
+    await expect(createPublicRestaurantOrder('fluffys.se', {
+      fulfillmentType: 'takeaway',
+      customerName: 'Alex',
+      customerPhone: '+46700000000',
+      items: [{ menuItemId: 'menu_1', quantity: 1 }],
+    })).rejects.toMatchObject({ problem: { status: 403 } });
+    expect(restaurantOrderRepository.getOpenBusinessDay).not.toHaveBeenCalled();
     expect(restaurantOrderRepository.createOrder).not.toHaveBeenCalled();
   });
 
